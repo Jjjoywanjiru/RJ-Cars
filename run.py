@@ -1,15 +1,6 @@
-# run.py
-from flask import Flask, render_template
+from app import create_app
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Welcome to RJ-Cars"
-
-@app.route('/login')
-def login():
-    return render_template('login.html')
+app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True)  # Runs on http://localhost:5000/
+    app.run(debug=True)
