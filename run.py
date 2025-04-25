@@ -44,6 +44,10 @@ def register():
     
     return render_template('register.html', form=form)
 
+@app.route('/featured-cars')
+def featuredCars():
+    return render_template('featured-cars.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
