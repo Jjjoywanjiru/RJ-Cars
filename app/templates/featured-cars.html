@@ -7,9 +7,22 @@
     <!-- Add your CSS links here -->
 </head>
 <body>
+    <div class="nav">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
+        <a href="{{ url_for('search') }}">Search vehicles</a>
+        <p>Find Your Dream Car Today</p>
+    </div>
+
+
+
     <header>
         <h1>Featured Cars</h1>
     </header>
+
+
+
+
     <main>
         <section id="featured-cars-list">
             <button id="previous">Previous</button>
@@ -24,8 +37,9 @@
     </main>
 
 
-    <footer>
-        <p>&copy; 2024 RJ Cars. All rights reserved.</p>
-    </footer>
+    <div class="footer">
+        <p>&copy; 2023 RJ Cars. All rights reserved.</p>
+
+    </div>
 </body>
 </html>
