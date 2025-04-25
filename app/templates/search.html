@@ -19,9 +19,72 @@
 
     </div>
 
+    <div class="search-form">
+        <form method="GET" action="{{ url_for('search') }}">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.brand.label }}<br>
+                {{ form.brand() }}
+                {% for error in form.brand.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.model.label }}<br>
+                {{ form.model() }}
+                {% for error in form.model.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.year.label }}<br>
+                {{ form.year(placeholder="Enter Year") }}
+                {% for error in form.year.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.price.label }}<br>
+                {{ form.price(placeholder="Enter Price") }}
+                {% for error in form.price.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.mileage.label }}<br>
+                {{ form.mileage(placeholder="Enter Mileage") }}
+                {% for error in form.mileage.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.condition.label }}<br>
+                {{ form.condition() }}
+                {% for error in form.condition.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.location.label }}<br>
+                {{ form.location(placeholder="Enter Location") }}
+                {% for error in form.location.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>{{ form.submit() }}</div>
+        </form>
+    </div>
+
    
     <div class="footer">
-        <p>&copy; 2023 RJ Cars. All rights reserved.</p>
+        <p>&copy; 2025 RJ Cars. All rights reserved.</p>
 
     </div>
 </body>
