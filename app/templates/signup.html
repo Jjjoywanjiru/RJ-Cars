@@ -38,5 +38,14 @@
         </div>
         <div>{{ form.submit() }}</div>
     </form>
+
+    <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    {% if form.errors %}
+        <ul>
+            {% for field, errors in form.errors.items() %}
+                <li>{{ field }}: {{ errors|join(', ') }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </body>
 </html>
