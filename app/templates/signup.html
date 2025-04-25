@@ -39,6 +39,46 @@
         <div>{{ form.submit() }}</div>
     </form>
 
+    <h2>User Registration</h2>
+    
+    <!-- Flash messages display -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('register') }}">
+        {{ reg_form.hidden_tag() }}
+        
+        <div class="form-group">
+            <label class="form-label">{{ reg_form.user_type.label.text }}</label>
+            <div class="form-radio-group">
+                {% for subfield in reg_form.user_type %}
+                    <div class="form-radio-option">
+                        {{ subfield }}
+                        {{ subfield.label }}
+                    </div>
+                {% endfor %}
+            </div>
+            {% if reg_form.user_type.errors %}
+                <div class="error-message">
+                    {% for error in reg_form.user_type.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ reg_form.submit(class="submit-btn") }}
+        </div>
+    </form>
+
     <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
     {% if form.errors %}
         <ul>
