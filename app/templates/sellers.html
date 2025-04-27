@@ -1,22 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Sellers Page</title>
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RJ Cars - Sellers</title>
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome to RJ Cars - Sellers</h1>
+        <p>List Your Vehicle</p>
+    </div>
 
-    <body>
-        <h1>Welcome to the Sellers Page</h1>
-        <p>Here you can find information about our sellers.</p>
+    <div class="nav">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
+        <a href="{{ url_for('search') }}">Search vehicles</a>
+        <a href="{{ url_for('sellers') }}">Sellers</a>
+    </div>
 
-        <div class="nav">
-            <a href="{{ url_for('home') }}">Home</a>
-            <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
-            <a href="{{ url_for('search') }}">Search vehicles</a>
-        </div>
+    <div class="seller-form">
+        <form method="POST" action="{{ url_for('sellers') }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <h2>Contact Information</h2>
+            <div>
+                {{ form.name.label }}<br>
+                {{ form.name() }}
+                {% for error in form.name.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <div>
+                {{ form.email.label }}<br>
+                {{ form.email() }}
+                {% for error in form.email.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <div>
+                {{ form.phone.label }}<br>
+                {{ form.phone() }}
+                {% for error in form.phone.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <h2>Vehicle Information</h2>
+            <div>
+                {{ form.brand.label }}<br>
+                {{ form.brand() }}
+                {% for error in form.brand.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.model.label }}<br>
+                {{ form.model() }}
+                {% for error in form.model.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.year.label }}<br>
+                {{ form.year(placeholder="Enter Year") }}
+                {% for error in form.year.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.price.label }}<br>
+                {{ form.price(placeholder="Enter Price") }}
+                {% for error in form.price.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.mileage.label }}<br>
+                {{ form.mileage(placeholder="Enter Mileage") }}
+                {% for error in form.mileage.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.condition.label }}<br>
+                {{ form.condition() }}
+                {% for error in form.condition.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>
+                {{ form.location.label }}<br>
+                {{ form.location(placeholder="Enter Location") }}
+                {% for error in form.location.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <h2>Listing Details</h2>
+            <div>
+                {{ form.description.label }}<br>
+                {{ form.description(rows=5, cols=50, placeholder="Describe your vehicle") }}
+                {% for error in form.description.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <div>
+                {{ form.images.label }}<br>
+                {{ form.images() }}
+                {% for error in form.images.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+    
+            <div>{{ form.submit() }}</div>
+        </form>
+    </div>
 
-        <div class="footer">
-            <p>&copy; 2023 RJ Cars. All rights reserved.</p>
-        </div>
-
+    <div class="footer">
+        <p>&copy; 2025 RJ Cars. All rights reserved.</p>
+    </div>
+</body>
 </html>

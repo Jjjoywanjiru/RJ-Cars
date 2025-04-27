@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, RadioField, SelectField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, RadioField, SelectField, IntegerField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Optional
+from flask_wtf.file import FileField, FileAllowed
 
 
 
@@ -48,3 +49,46 @@ class SearchForm(FlaskForm):
     location = StringField('Location', validators=[Optional()])
     
     submit = SubmitField('Search')
+    
+    
+class SellerForm(FlaskForm):
+    # Personal information
+    name = StringField('Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    
+    # Car information (from SearchForm)
+    brand = SelectField('Brand', choices=[
+        ('', 'Select Brand'),
+        ('Toyota', 'Toyota'),
+        ('Honda', 'Honda'),
+        ('Ford', 'Ford')
+    ], validators=[Optional()])
+    
+    model = SelectField('Model', choices=[
+        ('', 'Select Model'),
+        ('Corolla', 'Corolla'),
+        ('Civic', 'Civic'),
+        ('Mustang', 'Mustang')
+    ], validators=[Optional()])
+    
+    year = IntegerField('Year', validators=[Optional()])
+    price = IntegerField('Price', validators=[Optional()])
+    mileage = IntegerField('Mileage', validators=[Optional()])
+    
+    condition = SelectField('Condition', choices=[
+        ('', 'Select Condition'),
+        ('new', 'New'),
+        ('used', 'Used')
+    ], validators=[Optional()])
+    
+    location = StringField('Location', validators=[Optional()])
+    
+    # Additional fields
+    description = TextAreaField('Description', validators=[Optional()])
+    images = FileField('Vehicle Images', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
+    ])
+    
+    submit = SubmitField('Submit Listing')

@@ -1,5 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
-from forms import SignupForm, RegistrationForm, SearchForm
+from forms import SignupForm, RegistrationForm, SearchForm, SellerForm
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder='app/templates')
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this!
@@ -73,6 +75,58 @@ def register():
 def featuredCars():
     return render_template('featured-cars.html')
 
+import os
+from werkzeug.utils import secure_filename
+
+# Define where uploaded files will be stored
+UPLOAD_FOLDER = 'app/static/uploads'
+# Make sure this directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/sellers', methods=['GET', 'POST'])
+def sellers():
+    form = SellerForm()
+    if form.validate_on_submit():
+        # Process the form data
+        name = form.name.data
+        email = form.email.data
+        phone = form.phone.data
+        brand = form.brand.data
+        model = form.model.data
+        year = form.year.data
+        price = form.price.data
+        mileage = form.mileage.data
+        condition = form.condition.data
+        location = form.location.data
+        description = form.description.data
+        
+        # Handle the file upload
+        if form.images.data:
+            # Get the uploaded file
+            image_file = form.images.data
+            # Generate a secure filename
+            filename = secure_filename(image_file.filename)
+            # Create a unique filename to avoid overwriting
+            unique_filename = f"{name}_{brand}_{model}_{filename}"
+            # Save the file
+            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            image_file.save(file_path)
+            
+            # Store the file path in your database or wherever you're storing listings
+            image_path = f"uploads/{unique_filename}"
+        else:
+            image_path = None
+        
+        # Save all this information to your database
+        # This is just a placeholder - replace with your actual database code
+        # Example: db.session.add(new_listing)
+        # db.session.commit()
+        
+        flash('Your vehicle listing has been submitted successfully!', 'success')
+        return redirect(url_for('sellers'))
+    
+    return render_template('sellers.html', form=form)
 
 if __name__ == '__main__':
+    print("Starting Flask application...")
     app.run(debug=True)
