@@ -102,6 +102,8 @@ def signup():
     
     if signup_form.validate_on_submit():
         try:
+            
+            user_type = request.form.get('user_type', session.get('user_type', 'buyer'))
             # 1. Create auth user with email confirmation enabled
             auth_response = supabase.auth.sign_up({
                 "email": signup_form.email.data,
@@ -110,7 +112,7 @@ def signup():
                     "email_confirm": True,  # Enable email confirmation
                     "data": {
                         "username": signup_form.username.data,
-                        "user_type": session.get('user_type', 'buyer')
+                        "user_type": user_type
                     },
                     # Define redirect URL for email confirmation
                     "redirect_to": f"{app.config['SITE_URL']}/confirm-email"
@@ -122,7 +124,7 @@ def signup():
                 "id": auth_response.user.id,
                 "username": signup_form.username.data,
                 "email": signup_form.email.data,
-                "user_type": session.get('user_type', 'buyer')  # Default to buyer if not specified
+                "user_type": user_type # Default to buyer if not specified
                 # Removed the email_confirmed field
             }
             
