@@ -147,6 +147,7 @@ def logout():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+    
     form = SearchForm()
     
     if form.validate_on_submit():
@@ -187,10 +188,10 @@ def search():
 @app.before_request
 def check_user_type():
     # List of routes that sellers should be redirected from if they try to access
-    buyer_only_routes = ['/search']
+    buyer_only_routes = []
     
     # List of routes that buyers should be redirected from if they try to access
-    seller_only_routes = ['/sellers']
+    seller_only_routes = []
     
     # Get current user type from session
     user_type = session.get('user', {}).get('user_type')
