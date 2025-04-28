@@ -25,6 +25,11 @@ class Config:
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
     
+    
+    SITE_URL = os.environ.get('SITE_URL', 'http://localhost:5000')  # Default for local testing
+    
+    # Other config settings...
+    
     @classmethod
     def init_supabase(cls):
         if cls.SUPABASE_URL and cls.SUPABASE_KEY:

@@ -24,6 +24,10 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def home():
     return render_template('login.html')
 
+@app.route('/homepage')
+def homepage():
+    return render_template('homepage.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -55,7 +59,12 @@ def login():
                 "password": password
             })
             
-            # Get user profile data including user_type
+            # Check if email is confirmed in Supabase auth
+            if not auth_response.user.email_confirmed_at:
+                flash('Login failed: Email not confirmed. Please check your inbox and confirm your email.', 'danger')
+                return redirect(url_for('login'))
+                
+            # Get user profile data
             user_id = auth_response.user.id
             profile_response = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
             
@@ -76,7 +85,7 @@ def login():
                 if user_profile.get('user_type') == 'seller':
                     return redirect(url_for('sellers'))
                 else:
-                    return redirect(url_for('home'))
+                    return redirect(url_for('homepage'))
             else:
                 flash('User profile not found.', 'danger')
                 
@@ -84,7 +93,6 @@ def login():
             flash(f'Login failed: {str(e)}', 'danger')
     
     return render_template('login.html')
-
 # Add this middleware to check user type and redirect if needed
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -94,10 +102,19 @@ def signup():
     
     if signup_form.validate_on_submit():
         try:
-            # 1. Create auth user
+            # 1. Create auth user with email confirmation enabled
             auth_response = supabase.auth.sign_up({
                 "email": signup_form.email.data,
-                "password": signup_form.password.data
+                "password": signup_form.password.data,
+                "options": {
+                    "email_confirm": True,  # Enable email confirmation
+                    "data": {
+                        "username": signup_form.username.data,
+                        "user_type": session.get('user_type', 'buyer')
+                    },
+                    # Define redirect URL for email confirmation
+                    "redirect_to": f"{app.config['SITE_URL']}/confirm-email"
+                }
             })
             
             # 2. Create profile in user_profiles table with user type
@@ -106,25 +123,13 @@ def signup():
                 "username": signup_form.username.data,
                 "email": signup_form.email.data,
                 "user_type": session.get('user_type', 'buyer')  # Default to buyer if not specified
+                # Removed the email_confirmed field
             }
             
             supabase.table("user_profiles").insert(profile_data).execute()
             
-            # Store user info in session
-            session['user'] = {
-                'id': auth_response.user.id,
-                'email': signup_form.email.data,
-                'username': signup_form.username.data,
-                'user_type': session.get('user_type', 'buyer')
-            }
-            
-            flash('Account created successfully!', 'success')
-            
-            # Redirect based on user type
-            if session.get('user_type') == 'seller':
-                return redirect(url_for('sellers'))
-            else:
-                return redirect(url_for('home'))
+            flash('Account created successfully! Please check your email to confirm your account before logging in.', 'success')
+            return redirect(url_for('login'))
                 
         except Exception as e:
             flash(f'Error creating account: {str(e)}', 'danger')
@@ -198,7 +203,35 @@ def check_user_type():
         # If buyer tries to access seller-only route
         elif user_type == 'buyer' and request.path in seller_only_routes:
             flash('That page is for sellers only.', 'warning')
-            return redirect(url_for('home'))
+            return redirect(url_for('homepage'))
+
+
+@app.route('/confirm-email', methods=['GET'])
+def confirm_email():
+    # Get the token from the query parameters
+    token = request.args.get('token')
+    
+    if not token:
+        flash('Invalid confirmation link.', 'danger')
+        return redirect(url_for('login'))
+    
+    try:
+        # Use the token to verify the user's email
+        result = supabase.auth.verify_email_otp({
+            "token": token,
+            "type": "signup"
+        })
+        
+        if result and result.user:
+            # Email confirmed successfully
+            flash('Your email has been confirmed successfully! You can now log in.', 'success')
+        else:
+            flash('Email verification failed.', 'danger')
+            
+    except Exception as e:
+        flash(f'Email confirmation error: {str(e)}', 'danger')
+    
+    return redirect(url_for('login'))
 
 @app.route('/sellers', methods=['GET', 'POST'])
 def sellers():
