@@ -22,7 +22,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Rest of your routes remain the same...
 @app.route('/')
 def home():
-    return render_template('homepage.html')
+    return render_template('login.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
