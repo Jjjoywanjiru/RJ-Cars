@@ -4,8 +4,6 @@ from wtforms.validators import DataRequired, Email, EqualTo, Optional
 from flask_wtf.file import FileField, FileAllowed
 
 
-
-
 class SignupForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -27,7 +25,12 @@ class SearchForm(FlaskForm):
     year = IntegerField('Year', validators=[Optional()])
     price = IntegerField('Price', validators=[Optional()])
     mileage = IntegerField('Mileage', validators=[Optional()])
-    condition = SelectField('Condition', choices=[], validators=[Optional()])
+    # Initialize with default conditions
+    condition = SelectField('Condition', choices=[
+        ('', 'Select Condition'),
+        ('new', 'New'),
+        ('used', 'Used')
+    ], validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
     submit = SubmitField('Search')
     

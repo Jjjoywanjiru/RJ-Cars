@@ -44,7 +44,7 @@ def register():
 
 @app.route('/featuredCars')
 def featuredCars():
-    return render_template('featured-cars.html')  # Added 'return' keyword
+    return render_template('featured-cars.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -93,8 +93,8 @@ def login():
             flash(f'Login failed: {str(e)}', 'danger')
     
     return render_template('login.html')
-# Add this middleware to check user type and redirect if needed
 
+# Add this middleware to check user type and redirect if needed
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     signup_form = SignupForm()
@@ -148,8 +148,8 @@ def logout():
 # Helper function to get brands and models from database
 def get_car_options_from_db():
     try:
-        # Fetch all unique brands from the cars table
-        brands_response = supabase.table('cars_listings').select('brand').execute()
+        # FIXED: Consistent table name "car_listings" instead of "cars_listings"
+        brands_response = supabase.table('car_listings').select('brand').execute()
         brands = [('', 'Select Brand')]  # Default empty option
         
         if brands_response.data:
@@ -158,7 +158,7 @@ def get_car_options_from_db():
             brands.extend([(brand, brand) for brand in sorted(unique_brands)])
         
         # Fetch all unique models from the cars table
-        models_response = supabase.table('cars_listings').select('model').execute()
+        models_response = supabase.table('car_listings').select('model').execute()
         models = [('', 'Select Model')]  # Default empty option
         
         if models_response.data:
@@ -175,31 +175,44 @@ def get_car_options_from_db():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    # Get brand and model options from database
-    brands, models = get_car_options_from_db()
-    
     # Create form with dynamic choices
     form = SearchForm()
-    form.brand.choices = brands
-    form.model.choices = models
+    
+    # FIXED: Initialize condition choices with default values
+    form.condition.choices = [('', 'Select Condition'), ('new', 'New'), ('used', 'Used')]
     
     # Fetch distinct values for dropdowns
     try:
         # Get brands
         brands_response = supabase.table('car_listings').select('brand').execute()
-        unique_brands = list(set([item['brand'] for item in brands_response.data if item['brand']]))
+        unique_brands = list(set([item['brand'] for item in brands_response.data if item.get('brand')]))
         form.brand.choices = [('', 'Select Brand')] + [(brand, brand) for brand in sorted(unique_brands)]
         
-        # Initialize model choices
+        # Initialize model choices with empty option
         form.model.choices = [('', 'Select Model')]
+        
+        # If we have a brand selected, populate the models for that brand
+        if request.method == 'POST' and request.form.get('brand'):
+            brand = request.form.get('brand')
+            models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
+            unique_models = list(set([item['model'] for item in models_response.data if item.get('model')]))
+            form.model.choices = [('', 'Select Model')] + [(model, model) for model in sorted(unique_models)]
+            
+            # If we have a model submitted, ensure it's in the choices
+            if request.form.get('model'):
+                submitted_model = request.form.get('model')
+                if submitted_model not in [choice[0] for choice in form.model.choices]:
+                    form.model.choices.append((submitted_model, submitted_model))
         
         # Get conditions
         conditions_response = supabase.table('car_listings').select('condition').execute()
-        unique_conditions = list(set([item['condition'] for item in conditions_response.data if item['condition']]))
-        form.condition.choices = [('', 'Select Condition')] + [(cond, cond.capitalize()) for cond in sorted(unique_conditions)]
+        unique_conditions = list(set([item['condition'] for item in conditions_response.data if item.get('condition')]))
+        if unique_conditions:  # Only update if we have values
+            form.condition.choices = [('', 'Select Condition')] + [(cond, cond.capitalize()) for cond in sorted(unique_conditions)]
         
     except Exception as e:
-        flash('Error loading search filters.', 'danger')
+        flash(f'Error loading search filters: {str(e)}', 'danger')
+        print(f"Error loading search filters: {str(e)}")
     
     if form.validate_on_submit():
         try:
@@ -235,11 +248,21 @@ def search():
                 'location': form.location.data
             }
             
+            # Add debug information
+            print(f"Search results: {len(results.data)} cars found")
+            
             return redirect(url_for('search_results'))
             
         except Exception as e:
             flash(f'Error searching for cars: {str(e)}', 'danger')
+            print(f"Error searching for cars: {str(e)}")
             return redirect(url_for('search'))
+    elif request.method == 'POST':
+        # If form validation failed, show the errors
+        print("Form validation failed with errors:", form.errors)
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {field}: {error}", 'danger')
     
     return render_template('search.html', form=form)
 
@@ -248,6 +271,9 @@ def search_results():
     # Retrieve results and parameters from session
     results = session.get('search_results', [])
     search_params = session.get('search_params', {})
+    
+    # Add debug information
+    print(f"Displaying {len(results)} search results")
     
     # Clear the session data after retrieving it
     session.pop('search_results', None)
@@ -261,10 +287,16 @@ def search_results():
 @app.route('/get_models/<brand>')
 def get_models(brand):
     try:
+        # FIXED: This should be consistent with the table name used elsewhere
         models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
-        models = list(set([item['model'] for item in models_response.data if item['model']]))
+        
+        # Add debug information
+        print(f"Found {len(models_response.data)} models for brand {brand}")
+        
+        models = list(set([item['model'] for item in models_response.data if item.get('model')]))
         return jsonify({'models': sorted(models)})
     except Exception as e:
+        print(f"Error fetching models for brand {brand}: {str(e)}")
         return jsonify({'models': []})
 
 
