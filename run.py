@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
-from forms import SignupForm, RegistrationForm, SearchForm, SellerForm
+from forms import SearchForm, SellerForm, SignupForm, RegistrationForm
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -145,10 +145,43 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect(url_for('home'))
 
+# Helper function to get brands and models from database
+def get_car_options_from_db():
+    try:
+        # Fetch all unique brands from the cars table
+        brands_response = supabase.table('cars_listings').select('brand').execute()
+        brands = [('', 'Select Brand')]  # Default empty option
+        
+        if brands_response.data:
+            # Extract unique brands and add to list
+            unique_brands = set(item['brand'] for item in brands_response.data if item.get('brand'))
+            brands.extend([(brand, brand) for brand in sorted(unique_brands)])
+        
+        # Fetch all unique models from the cars table
+        models_response = supabase.table('cars_listings').select('model').execute()
+        models = [('', 'Select Model')]  # Default empty option
+        
+        if models_response.data:
+            # Extract unique models and add to list
+            unique_models = set(item['model'] for item in models_response.data if item.get('model'))
+            models.extend([(model, model) for model in sorted(unique_models)])
+            
+        return brands, models
+    except Exception as e:
+        print(f"Error fetching car options: {str(e)}")
+        # Return default options in case of error
+        return [('', 'Select Brand'), ('Toyota', 'Toyota'), ('Honda', 'Honda'), ('Ford', 'Ford')], \
+               [('', 'Select Model'), ('Corolla', 'Corolla'), ('Civic', 'Civic'), ('Mustang', 'Mustang')]
+
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+    # Get brand and model options from database
+    brands, models = get_car_options_from_db()
     
+    # Create form with dynamic choices
     form = SearchForm()
+    form.brand.choices = brands
+    form.model.choices = models
     
     if form.validate_on_submit():
         # Build query for Supabase
@@ -183,6 +216,27 @@ def search():
                                 results=[])
     
     return render_template('search.html', form=form)
+
+# Ajax endpoint to get models for a selected brand
+@app.route('/get_models/<brand>', methods=['GET'])
+def get_models(brand):
+    try:
+        if not brand or brand == 'Select Brand':
+            # If no brand selected, return all models
+            models_response = supabase.table('cars_listings').select('model').execute()
+        else:
+            # Filter models by brand
+            models_response = supabase.table('cars_listings').select('model').eq('brand', brand).execute()
+        
+        models = [('', 'Select Model')]  # Default empty option
+        if models_response.data:
+            # Extract unique models and add to list
+            unique_models = set(item['model'] for item in models_response.data if item.get('model'))
+            models.extend([(model, model) for model in sorted(unique_models)])
+            
+        return jsonify(models)
+    except Exception as e:
+        return jsonify([('', f'Error: {str(e)}')])
 
 
 @app.before_request
@@ -238,7 +292,13 @@ def confirm_email():
 
 @app.route('/sellers', methods=['GET', 'POST'])
 def sellers():
+    # Get brand and model options from database for the seller form
+    brands, models = get_car_options_from_db()
+    
     form = SellerForm()
+    form.brand.choices = brands
+    form.model.choices = models
+    
     if form.validate_on_submit():
         # Handle the file upload
         image_path = None

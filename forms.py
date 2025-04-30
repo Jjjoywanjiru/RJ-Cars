@@ -22,19 +22,9 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Continue')
     
 class SearchForm(FlaskForm):
-    brand = SelectField('Brand', choices=[
-        ('', 'Select Brand'),
-        ('Toyota', 'Toyota'),
-        ('Honda', 'Honda'),
-        ('Ford', 'Ford')
-    ], validators=[Optional()])
-    
-    model = SelectField('Model', choices=[
-        ('', 'Select Model'),
-        ('Corolla', 'Corolla'),
-        ('Civic', 'Civic'),
-        ('Mustang', 'Mustang')
-    ], validators=[Optional()])
+    # The choices will be populated dynamically from the database
+    brand = SelectField('Brand', validators=[Optional()])
+    model = SelectField('Model', validators=[Optional()])
     
     year = IntegerField('Year', validators=[Optional()])
     price = IntegerField('Price', validators=[Optional()])
@@ -57,20 +47,9 @@ class SellerForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     phone = StringField('Phone', validators=[DataRequired()])
     
-    # Car information (from SearchForm)
-    brand = SelectField('Brand', choices=[
-        ('', 'Select Brand'),
-        ('Toyota', 'Toyota'),
-        ('Honda', 'Honda'),
-        ('Ford', 'Ford')
-    ], validators=[Optional()])
-    
-    model = SelectField('Model', choices=[
-        ('', 'Select Model'),
-        ('Corolla', 'Corolla'),
-        ('Civic', 'Civic'),
-        ('Mustang', 'Mustang')
-    ], validators=[Optional()])
+    # Car information (choices will be populated dynamically)
+    brand = SelectField('Brand', validators=[Optional()])
+    model = SelectField('Model', validators=[Optional()])
     
     year = IntegerField('Year', validators=[Optional()])
     price = IntegerField('Price', validators=[Optional()])

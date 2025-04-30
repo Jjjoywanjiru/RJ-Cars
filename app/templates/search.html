@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RJ Cars - Your Trusted Car Dealer</title>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
     <div class="header">
@@ -17,7 +17,6 @@
         <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
         <a href="{{ url_for('search') }}">Search vehicles</a>
         <a href="{{ url_for('sellers') }}">Sellers</a>
-
     </div>
 
     <div class="search-form">
@@ -83,10 +82,38 @@
         </form>
     </div>
 
-   
     <div class="footer">
         <p>&copy; 2025 RJ Cars. All rights reserved.</p>
-
     </div>
+
+    <script>
+        // Add dynamic behavior - when brand is selected, update model options
+        $(document).ready(function() {
+            $('#brand').change(function() {
+                var selectedBrand = $(this).val();
+                
+                // Make AJAX request to get models for selected brand
+                $.ajax({
+                    url: '/get_models/' + selectedBrand,
+                    type: 'GET',
+                    success: function(data) {
+                        // Clear current options
+                        $('#model').empty();
+                        
+                        // Add new options
+                        $.each(data, function(i, item) {
+                            $('#model').append($('<option>', {
+                                value: item[0],
+                                text: item[1]
+                            }));
+                        });
+                    },
+                    error: function(error) {
+                        console.log('Error fetching models:', error);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
