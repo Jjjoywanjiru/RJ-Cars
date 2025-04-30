@@ -9,7 +9,7 @@ from io import BytesIO
 import uuid
 
 # Initialize Flask app
-app = Flask(__name__, template_folder='app/templates')
+app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 
 # Load configuration
 app.config.from_object(Config)

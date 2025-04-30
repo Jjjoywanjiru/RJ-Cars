@@ -4,75 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
-    <title>RJ Cars - Your Trusted Car Dealer</title>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>RJ Cars - Exceptional Automobiles</title>
 </head>
 <body>
-    <div class="header">
-        <h1>Welcome to RJ Cars</h1>
-        <p>Find Your Dream Car Today</p>
-    </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
+            <p>Purveyor of Exceptional Automobiles Since 1985</p>
+        </div>
+    </section>
 
-    <div class="nav">
-        <a href="{{ url_for('homepage') }}">Home</a>
-        <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
-        <a href="{{ url_for('search') }}">Search vehicles</a>
-        <a href="{{ url_for('sellers') }}">Sellers</a>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
 
-    </div>
-
-    <div class="main-content">
-        <h2>Featured Car</h2>
-        <p>Explore our wide selection of quality vehicles for sale.</p>
+    <!-- Featured Cars -->
+    <section class="container">
+        <div class="section-title">
+            <h2>Featured Automobiles</h2>
+        </div>
         
-        <!-- Add more content here -->
-    </div>
+        <div class="featured-cars">
+            <div class="car-card">
+                <div class="car-image">
+                    <img src="/api/placeholder/600/400" alt="Classic Mercedes">
+                </div>
+                <div class="car-info">
+                    <h3>1965 Mercedes-Benz 280SL</h3>
+                    <p>Pristine condition with original leather interior</p>
+                    <p>24,500 original miles</p>
+                    <span class="price">$175,000</span>
+                </div>
+            </div>
+            
+            <div class="car-card">
+                <div class="car-image">
+                    <img src="/api/placeholder/600/400" alt="Vintage Jaguar">
+                </div>
+                <div class="car-info">
+                    <h3>1962 Jaguar E-Type Series I</h3>
+                    <p>Fully restored to concours standards</p>
+                    <p>Opalescent Silver Blue with navy interior</p>
+                    <span class="price">$220,000</span>
+                </div>
+            </div>
+            
+            <div class="car-card">
+                <div class="car-image">
+                    <img src="/api/placeholder/600/400" alt="Classic Porsche">
+                </div>
+                <div class="car-info">
+                    <h3>1973 Porsche 911 Carrera RS</h3>
+                    <p>Numbers matching, exceptional provenance</p>
+                    <p>Recent engine rebuild, concours winner</p>
+                    <span class="price">$395,000</span>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- About Section -->
+    <section class="about-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Heritage</h2>
+            </div>
+            <div class="about-content">
+                <p>At RJ Cars, we have dedicated our lives to the pursuit of automotive excellence. For over three decades, we have curated only the finest motor vehicles for the most discerning collectors and enthusiasts.</p>
+                <p>Each automobile in our collection is meticulously vetted for authenticity, provenance, and condition. We pride ourselves on offering vehicles of exceptional quality and historical significance.</p>
+                <p>Our team of marque specialists brings decades of expertise and passion to ensure that every acquisition represents not just a vehicle, but a piece of automotive history preserved for future generations.</p>
+            </div>
+        </div>
+    </section>
 
-    <h2>Learn more about us</h2>
-    <p>At RJ Cars, we are dedicated to providing you with the best car buying experience. Our team of experts is here to help you find the perfect vehicle that fits your needs and budget.</p>
-    <p>Whether you're looking for a new or used car, we have a wide range of options to choose from. Our commitment to quality and customer satisfaction sets us apart from the rest.</p>
-    <p>Contact us today to learn more about our services and how we can assist you in finding your dream car.</p>
-    <p>We look forward to serving you!</p>
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-title">
+                <h2>Client Testimonials</h2>
+            </div>
+            <div class="testimonial-container">
+                <div class="testimonial-cards">
+                    <div class="testimonial-card">
+                        <p>The knowledge and expertise demonstrated by RJ Cars is truly exceptional. They found me a pristine Aston Martin DB5 that exceeded all expectations. Their attention to detail and commitment to authenticity is unparalleled.</p>
+                        <div class="testimonial-author">— Jonathan Harrington</div>
+                    </div>
+                    
+                    <div class="testimonial-card">
+                        <p>I've been collecting classic automobiles for over twenty years, and RJ Cars stands head and shoulders above any dealer I've worked with. Their integrity and passion for these magnificent machines is evident in everything they do.</p>
+                        <div class="testimonial-author">— Elizabeth Blackwell</div>
+                    </div>
+                    
+                    <div class="testimonial-card">
+                        <p>From acquisition to delivery, the experience with RJ Cars was flawless. Their documentation and historical research on my Ferrari 250 GT was thorough and impressive. I wouldn't trust anyone else with my collection.</p>
+                        <div class="testimonial-author">— Robert Montgomery</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <h2>Hear what others are saying</h2>
-    <p>Don't just take our word for it! Here's what some of our satisfied customers have to say:</p>
-    <blockquote>
-        <p>"RJ Cars made my car buying experience so easy and enjoyable. I found the perfect car at a great price!"</p>
-        <footer>- John Doe</footer>
-    </blockquote>
-    <blockquote>
-        <p>"The team at RJ Cars was incredibly helpful and knowledgeable. I highly recommend them!"</p>
-        <footer>- Jane Smith</footer>
-    </blockquote>
-    <blockquote>
-        <p>"I love my new car! Thank you, RJ Cars, for making the process so smooth!"</p>
-        <footer>- Sarah Johnson</footer>
-    </blockquote>
-    <p>Join our community of happy customers and experience the RJ Cars difference!</p>
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Discover Your Classic</h2>
+            <p>Whether you're seeking to acquire a significant addition to your collection or looking to consign a cherished automobile, our team of specialists is at your service.</p>
+            <a href="{{ url_for('search') }}" class="btn">Explore Our Collection</a>
+        </div>
+    </section>
 
+    <!-- Contact Section -->
+    <section class="contact-section container">
+        <div class="section-title">
+            <h2>Get In Touch</h2>
+        </div>
+        <div class="contact-grid">
+            <div class="contact-item">
+                <h3>Visit Our Showroom</h3>
+                <p>123 Elegance Boulevard</p>
+                <p>Monterey, CA 93940</p>
+                <p>By appointment only</p>
+            </div>
+            
+            <div class="contact-item">
+                <h3>Contact</h3>
+                <p>Email: concierge@rjcars.com</p>
+                <p>Telephone: +1 (555) 123-4567</p>
+                <p>Hours: Monday-Friday 10am-6pm</p>
+            </div>
+            
+            <div class="contact-item">
+                <h3>Follow Us</h3>
+                <p>Stay connected for exclusive previews</p>
+                <ul class="social-links">
+                    <li><a href="#"><i class="fab fa-facebook-f"></i></a></li>
+                    <li><a href="#"><i class="fab fa-instagram"></i></a></li>
+                    <li><a href="#"><i class="fab fa-pinterest-p"></i></a></li>
+                    <li><a href="#"><i class="fab fa-linkedin-in"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
 
-
-    <h2>Contact Us</h2>
-    <p>If you have any questions or inquiries, feel free to reach out to us:</p>
-    <p>Email: RJCars@gmail.com</p>
-    <p>Phone: +1 (123) 456-7890</p>
-    <p>Address: 123 Main Street, Cityville, State, ZIP</p>
-    <p>Follow us on social media for the latest updates and promotions!</p>
-
-    <h3>Follow Us</h3>
-    <p>Stay connected with us on social media:</p>
-    <ul>
-        <li><a href="https://www.facebook.com/RJCars">Facebook</a></li>
-        <li><a href="https://www.twitter.com/RJCars">Twitter</a></li>
-        <li><a href="https://www.instagram.com/RJCars">Instagram</a></li>
-        <li><a href="https://www.linkedin.com/company/rjcars">LinkedIn</a></li>
-    </ul>
-
-
-    <div class="footer">
-        <p>&copy; 2023 RJ Cars. All rights reserved.</p>
-
-    </div>
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
 </body>
 </html>
