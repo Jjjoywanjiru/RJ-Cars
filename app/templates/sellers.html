@@ -3,133 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RJ Cars - Sellers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='sellers.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>RJ Cars - Authorized Sellers</title>
 </head>
 <body>
-    <div class="header">
-        <h1>Welcome to RJ Cars - Sellers</h1>
-        <p>List Your Vehicle</p>
-    </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
+            <p>List Your Exceptional Automobile</p>
+        </div>
+    </section>
 
-    <div class="nav">
-        <a href="{{ url_for('homepage') }}">Home</a>
-        <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
-        <a href="{{ url_for('search') }}">Search vehicles</a>
-        <a href="{{ url_for('sellers') }}">Sellers</a>
-    </div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
 
-    <div class="seller-form">
-        <form method="POST" action="{{ url_for('sellers') }}" enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-            
-            <h2>Contact Information</h2>
-            <div>
-                {{ form.name.label }}<br>
-                {{ form.name() }}
-                {% for error in form.name.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <div>
-                {{ form.email.label }}<br>
-                {{ form.email() }}
-                {% for error in form.email.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <div>
-                {{ form.phone.label }}<br>
-                {{ form.phone() }}
-                {% for error in form.phone.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <h2>Vehicle Information</h2>
-            <div>
-                {{ form.brand.label }}<br>
-                {{ form.brand() }}
-                {% for error in form.brand.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.model.label }}<br>
-                {{ form.model() }}
-                {% for error in form.model.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.year.label }}<br>
-                {{ form.year(placeholder="Enter Year") }}
-                {% for error in form.year.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.price.label }}<br>
-                {{ form.price(placeholder="Enter Price") }}
-                {% for error in form.price.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.mileage.label }}<br>
-                {{ form.mileage(placeholder="Enter Mileage") }}
-                {% for error in form.mileage.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.condition.label }}<br>
-                {{ form.condition() }}
-                {% for error in form.condition.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>
-                {{ form.location.label }}<br>
-                {{ form.location(placeholder="Enter Location") }}
-                {% for error in form.location.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <h2>Listing Details</h2>
-            <div>
-                {{ form.description.label }}<br>
-                {{ form.description(rows=5, cols=50, placeholder="Describe your vehicle") }}
-                {% for error in form.description.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <div>
-                {{ form.images.label }}<br>
-                {{ form.images() }}
-                {% for error in form.images.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-    
-            <div>{{ form.submit() }}</div>
-        </form>
-    </div>
+    <!-- Seller Form Section -->
+    <section class="container">
+        <div class="section-title">
+            <h2>Offer Your Vehicle</h2>
+        </div>
+        
+        <div class="page-intro">
+            <p>At RJ Cars, we carefully select only the finest classic and vintage automobiles for our discerning clientele. If you own an exceptional vehicle that you believe meets our exacting standards, we invite you to submit your details below.</p>
+            <p>Our team of specialists will review your submission and contact you to discuss potential acquisition or consignment opportunities.</p>
+        </div>
 
-    <div class="footer">
-        <p>&copy; 2025 RJ Cars. All rights reserved.</p>
-    </div>
+        <div class="seller-form">
+            <form method="POST" action="{{ url_for('sellers') }}" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                
+                <h2>Contact Information</h2>
+                <div class="form-section">
+                    <div>
+                        {{ form.name.label }}
+                        {{ form.name(placeholder="Enter your full name") }}
+                        {% for error in form.name.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <div>
+                        {{ form.email.label }}
+                        {{ form.email(placeholder="Enter your email address") }}
+                        {% for error in form.email.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <div>
+                        {{ form.phone.label }}
+                        {{ form.phone(placeholder="Enter your telephone number") }}
+                        {% for error in form.phone.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <h2>Vehicle Information</h2>
+                <div class="form-section">
+                    <div>
+                        {{ form.brand.label }}
+                        {{ form.brand(placeholder="Vehicle manufacturer") }}
+                        {% for error in form.brand.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.model.label }}
+                        {{ form.model(placeholder="Vehicle model") }}
+                        {% for error in form.model.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.year.label }}
+                        {{ form.year(placeholder="Year of manufacture") }}
+                        {% for error in form.year.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.price.label }}
+                        {{ form.price(placeholder="Desired asking price") }}
+                        {% for error in form.price.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.mileage.label }}
+                        {{ form.mileage(placeholder="Current odometer reading") }}
+                        {% for error in form.mileage.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.condition.label }}
+                        {{ form.condition() }}
+                        {% for error in form.condition.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div>
+                        {{ form.location.label }}
+                        {{ form.location(placeholder="Vehicle current location") }}
+                        {% for error in form.location.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <h2>Listing Details</h2>
+                <div>
+                    {{ form.description.label }}
+                    {{ form.description(rows=5, cols=50, placeholder="Please provide a detailed description of your vehicle, including its history, restoration work, and any notable features.") }}
+                    {% for error in form.description.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div>
+                    {{ form.images.label }}
+                    {{ form.images() }}
+                    <p class="form-help">Please upload high-quality images of your vehicle from multiple angles. Maximum 5 files, 5MB each.</p>
+                    {% for error in form.images.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </div>
+        
+                <div>
+                    {{ form.submit(value="Submit Your Listing") }}
+                </div>
+            </form>
+        </div>
+    </section>
 
-    
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
 </body>
 </html>

@@ -3,85 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <title>Login - RJ Cars</title>
-    <style>
-        .flash-message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .flash-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .flash-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .login-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .error-message {
-            color: red;
-            font-size: 0.8rem;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-        }
-        button[type="submit"] {
-            background: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>Login to RJ Cars</h1>
-        
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <!-- Hero Section (Smaller than homepage) -->
+    <section class="hero hero-small">
+        <div class="hero-content">
+            <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
+            <p>Member Access</p>
+        </div>
+    </section>
 
-        <form method="POST" action="{{ url_for('login') }}">
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
 
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <div class="form-group">
-                <button type="submit">Login</button>
+    <!-- Login Section -->
+    <section class="container login-section">
+        <div class="login-container">
+            <div class="section-title">
+                <h2>Member Login</h2>
             </div>
             
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Sign Up</a></p>
-        </form>
-    </div>
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-wrapper">
+                <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <div class="form-action">
+                        <button type="submit" class="btn">Sign In</button>
+                    </div>
+                    
+                    <div class="form-links">
+                        <a href="#" class="text-link">Forgot Password?</a>
+                        <span class="divider">|</span>
+                        <a href="{{ url_for('register') }}" class="text-link">Create Account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
 </body>
 </html>

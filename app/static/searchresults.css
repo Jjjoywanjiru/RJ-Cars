@@ -1,0 +1,380 @@
+/* searchresults.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
+
+/* Elegant Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Montserrat', serif;
+  background-color: #f9f7f4;
+  color: #2c2c2c;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+h1 {
+  font-size: 3.2rem;
+}
+
+h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+h2::after {
+  content: '';
+  display: block;
+  width: 70px;
+  height: 2px;
+  background-color: #b89b72;
+  margin: 12px 0 0;
+}
+
+h3 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+
+/* Header & Navigation */
+.hero-mini {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+              url('/static/images/vintage-car-bg.jpg') no-repeat center center;
+  background-size: cover;
+  color: #fff;
+  text-align: center;
+  padding: 60px 20px;
+  position: relative;
+}
+
+.hero-mini h1 {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-size: 2.5rem;
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.logo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 2px;
+  background-color: #b89b72;
+}
+
+.logo-accent {
+  color: #b89b72;
+}
+
+.navbar {
+  background-color: #1a1a1a;
+  padding: 12px 0;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+}
+
+.nav-links a {
+  color: #f0f0f0;
+  text-decoration: none;
+  padding: 8px 24px;
+  margin: 0 5px;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+  position: relative;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: 0;
+  left: 50%;
+  background-color: #b89b72;
+  transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #b89b72;
+}
+
+.nav-links a:hover::after {
+  width: 70%;
+  left: 15%;
+}
+
+/* Main Content Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+/* Search Summary Section */
+.search-summary {
+  background-color: #fff;
+  padding: 30px;
+  margin-bottom: 40px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border-radius: 2px;
+  position: relative;
+}
+
+.search-summary h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+.search-summary p {
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.search-summary strong {
+  color: #b89b72;
+  font-weight: 600;
+}
+
+.search-result-count {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.search-result-count h2 {
+  display: inline-block;
+}
+
+.search-result-count h2::after {
+  margin: 12px auto 0;
+}
+
+/* Results Grid */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.car-card {
+  background: #fff;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.car-card:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transform: translateY(-10px);
+}
+
+.car-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+
+.car-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.car-card:hover .car-image img {
+  transform: scale(1.05);
+}
+
+.car-info {
+  padding: 25px 20px;
+  border-top: 1px solid #eee;
+}
+
+.car-info h3 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+.car-info p {
+  color: #666;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.car-details {
+  margin-top: 15px;
+}
+
+.car-details p {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted #eee;
+  padding: 5px 0;
+  margin-bottom: 5px;
+}
+
+.car-details strong {
+  color: #333;
+}
+
+.car-price {
+  color: #b89b72;
+  font-weight: 600;
+  font-size: 1.3rem;
+  margin-top: 15px;
+  display: block;
+}
+
+.contact-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #b89b72;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  border: 2px solid #b89b72;
+  margin-top: 15px;
+}
+
+.contact-btn:hover {
+  background-color: transparent;
+  color: #b89b72;
+}
+
+/* No Results */
+.no-results {
+  background-color: #fff;
+  padding: 60px 30px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border-radius: 2px;
+}
+
+.no-results h2::after {
+  margin: 12px auto 0;
+}
+
+.no-results p {
+  color: #666;
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+.no-results a {
+  color: #b89b72;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.no-results a:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+.footer {
+  background-color: #1a1a1a;
+  color: #999;
+  text-align: center;
+  padding: 30px 0;
+  font-size: 0.9rem;
+}
+
+.footer-logo {
+  color: #fff;
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  display: inline-block;
+}
+
+.footer p {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .hero-mini {
+    padding: 40px 20px;
+  }
+  
+  .hero-mini h1 {
+    font-size: 2.5rem;
+  }
+  
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .nav-links a {
+    padding: 8px 16px;
+  }
+  
+  .search-summary {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-mini h1 {
+    font-size: 2rem;
+  }
+  
+  .nav-links a {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+  }
+  
+  .search-summary p {
+    font-size: 0.95rem;
+  }
+}

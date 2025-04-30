@@ -2,58 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Complete Sign Up</title>
-    <style>
-        .flash-message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .flash-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .flash-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-radio-group {
-            display: flex;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-        .error-message {
-            color: red;
-            font-size: 0.8rem;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-        }
-        button[type="submit"] {
-            background: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='signup.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>RJ Cars - Create Your Account</title>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Logo -->
+    <div class="logo-container">
+        <h1 class="logo">RJ <span class="logo-accent">Cars</span></h1>
+    </div>
+
+    <!-- Sign Up Form -->
     <div class="form-container">
         <h1>Create Your Account</h1>
         
@@ -68,7 +40,7 @@
             {% endif %}
         {% endwith %}
 
-        <!-- SINGLE COMPLETE FORM -->
+        <!-- Registration Form -->
         <form method="POST" action="{{ url_for('signup') }}">
             {{ form.hidden_tag() }}
             
@@ -93,45 +65,49 @@
 
             <!-- Account Details -->
             <div class="form-group">
-                {{ form.username.label }}<br>
+                <label for="{{ form.username.id }}">{{ form.username.label.text }}</label>
                 {{ form.username(size=32) }}
                 {% for error in form.username.errors %}
-                    <span class="error-message">[{{ error }}]</span>
+                    <span class="error-message">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                {{ form.email.label }}<br>
+                <label for="{{ form.email.id }}">{{ form.email.label.text }}</label>
                 {{ form.email(size=32) }}
                 {% for error in form.email.errors %}
-                    <span class="error-message">[{{ error }}]</span>
+                    <span class="error-message">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                {{ form.password.label }}<br>
+                <label for="{{ form.password.id }}">{{ form.password.label.text }}</label>
                 {{ form.password(size=32) }}
                 {% for error in form.password.errors %}
-                    <span class="error-message">[{{ error }}]</span>
+                    <span class="error-message">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <div class="form-group">
-                {{ form.confirm.label }}<br>
+                <label for="{{ form.confirm.id }}">{{ form.confirm.label.text }}</label>
                 {{ form.confirm(size=32) }}
                 {% for error in form.confirm.errors %}
-                    <span class="error-message">[{{ error }}]</span>
+                    <span class="error-message">{{ error }}</span>
                 {% endfor %}
             </div>
 
-            
-
             <div class="form-group">
-                <button type="submit">Create Account</button>
+                <button type="submit" class="btn">Create Account</button>
             </div>
         </form>
 
-        <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+        <p class="login-link">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
 </body>
 </html>
