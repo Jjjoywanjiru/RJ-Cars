@@ -4,7 +4,9 @@ from config import Config
 from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
-
+import base64
+from io import BytesIO
+import uuid
 
 # Initialize Flask app
 app = Flask(__name__, template_folder='app/templates')
@@ -16,10 +18,52 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 supabase = Config.init_supabase()
 
-# Ensure upload folder exists
+# Ensure upload folder exists (for backup purposes)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Rest of your routes remain the same...
+# Initialize Supabase storage bucket
+def initialize_supabase_storage():
+    try:
+        # Check if bucket exists
+        existing_buckets = supabase.storage.list_buckets()
+        bucket_name = app.config['SUPABASE_STORAGE_BUCKET']
+        
+        if not any(bucket['name'] == bucket_name for bucket in existing_buckets):
+            # Create the bucket if it doesn't exist
+            supabase.storage.create_bucket(
+                bucket_name,
+                {
+                    'public': True,
+                    'allowed_mime_types': ['image/*'],
+                    'file_size_limit': 5  # MB
+                }
+            )
+            print(f"Created storage bucket: {bucket_name}")
+            
+            # Set bucket policies
+            policy = {
+                'action': 'select',
+                'effect': 'allow',
+                'role': 'authenticated',
+                'bucket': bucket_name
+            }
+            supabase.storage.set_bucket_policy(bucket_name, policy)
+            
+        return True
+    except Exception as e:
+        print(f"Error initializing storage: {str(e)}")
+        return False
+
+# Call this when the app starts
+if supabase:
+    initialize_supabase_storage()
+
+# Helper function for file validation
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
+# Routes
 @app.route('/')
 def home():
     return render_template('login.html')
@@ -28,19 +72,16 @@ def home():
 def homepage():
     return render_template('homepage.html')
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     registration_form = RegistrationForm()
     signup_form = SignupForm()
     
     if registration_form.validate_on_submit():
-        # Store the user_type in session
         session['user_type'] = registration_form.user_type.data
         return redirect(url_for('signup'))
         
     return render_template('signup.html', form=signup_form, reg_form=registration_form)
-
 
 @app.route('/featuredCars')
 def featuredCars():
@@ -53,25 +94,21 @@ def login():
         password = request.form.get('password')
         
         try:
-            # Authenticate with Supabase
             auth_response = supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
             
-            # Check if email is confirmed in Supabase auth
             if not auth_response.user.email_confirmed_at:
-                flash('Login failed: Email not confirmed. Please check your inbox and confirm your email.', 'danger')
+                flash('Login failed: Email not confirmed. Please check your inbox.', 'danger')
                 return redirect(url_for('login'))
                 
-            # Get user profile data
             user_id = auth_response.user.id
             profile_response = supabase.table("user_profiles").select("*").eq("id", user_id).execute()
             
             if profile_response.data and len(profile_response.data) > 0:
                 user_profile = profile_response.data[0]
                 
-                # Store user in session
                 session['user'] = {
                     'id': user_id,
                     'email': email,
@@ -81,7 +118,6 @@ def login():
                 
                 flash('Logged in successfully!', 'success')
                 
-                # Redirect based on user type
                 if user_profile.get('user_type') == 'seller':
                     return redirect(url_for('sellers'))
                 else:
@@ -94,49 +130,42 @@ def login():
     
     return render_template('login.html')
 
-# Add this middleware to check user type and redirect if needed
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     signup_form = SignupForm()
-    registration_form = RegistrationForm()  # Create registration form instance
+    registration_form = RegistrationForm()
     
     if signup_form.validate_on_submit():
         try:
-            
             user_type = request.form.get('user_type', session.get('user_type', 'buyer'))
-            # 1. Create auth user with email confirmation enabled
             auth_response = supabase.auth.sign_up({
                 "email": signup_form.email.data,
                 "password": signup_form.password.data,
                 "options": {
-                    "email_confirm": True,  # Enable email confirmation
+                    "email_confirm": True,
                     "data": {
                         "username": signup_form.username.data,
                         "user_type": user_type
                     },
-                    # Define redirect URL for email confirmation
                     "redirect_to": f"{app.config['SITE_URL']}/confirm-email"
                 }
             })
             
-            # 2. Create profile in user_profiles table with user type
             profile_data = {
                 "id": auth_response.user.id,
                 "username": signup_form.username.data,
                 "email": signup_form.email.data,
-                "user_type": user_type # Default to buyer if not specified
-                # Removed the email_confirmed field
+                "user_type": user_type
             }
             
             supabase.table("user_profiles").insert(profile_data).execute()
             
-            flash('Account created successfully! Please check your email to confirm your account before logging in.', 'success')
+            flash('Account created! Please check your email to confirm.', 'success')
             return redirect(url_for('login'))
                 
         except Exception as e:
             flash(f'Error creating account: {str(e)}', 'danger')
         
-    # Always pass both forms to the template
     return render_template('signup.html', form=signup_form, reg_form=registration_form)
 
 @app.route('/logout')
@@ -145,69 +174,32 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect(url_for('home'))
 
-# Helper function to get brands and models from database
-def get_car_options_from_db():
-    try:
-        # FIXED: Consistent table name "car_listings" instead of "cars_listings"
-        brands_response = supabase.table('car_listings').select('brand').execute()
-        brands = [('', 'Select Brand')]  # Default empty option
-        
-        if brands_response.data:
-            # Extract unique brands and add to list
-            unique_brands = set(item['brand'] for item in brands_response.data if item.get('brand'))
-            brands.extend([(brand, brand) for brand in sorted(unique_brands)])
-        
-        # Fetch all unique models from the cars table
-        models_response = supabase.table('car_listings').select('model').execute()
-        models = [('', 'Select Model')]  # Default empty option
-        
-        if models_response.data:
-            # Extract unique models and add to list
-            unique_models = set(item['model'] for item in models_response.data if item.get('model'))
-            models.extend([(model, model) for model in sorted(unique_models)])
-            
-        return brands, models
-    except Exception as e:
-        print(f"Error fetching car options: {str(e)}")
-        # Return default options in case of error
-        return [('', 'Select Brand'), ('Toyota', 'Toyota'), ('Honda', 'Honda'), ('Ford', 'Ford')], \
-               [('', 'Select Model'), ('Corolla', 'Corolla'), ('Civic', 'Civic'), ('Mustang', 'Mustang')]
-
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    # Create form with dynamic choices
     form = SearchForm()
-    
-    # FIXED: Initialize condition choices with default values
     form.condition.choices = [('', 'Select Condition'), ('new', 'New'), ('used', 'Used')]
     
-    # Fetch distinct values for dropdowns
     try:
-        # Get brands
         brands_response = supabase.table('car_listings').select('brand').execute()
         unique_brands = list(set([item['brand'] for item in brands_response.data if item.get('brand')]))
         form.brand.choices = [('', 'Select Brand')] + [(brand, brand) for brand in sorted(unique_brands)]
         
-        # Initialize model choices with empty option
         form.model.choices = [('', 'Select Model')]
         
-        # If we have a brand selected, populate the models for that brand
         if request.method == 'POST' and request.form.get('brand'):
             brand = request.form.get('brand')
             models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
             unique_models = list(set([item['model'] for item in models_response.data if item.get('model')]))
             form.model.choices = [('', 'Select Model')] + [(model, model) for model in sorted(unique_models)]
             
-            # If we have a model submitted, ensure it's in the choices
             if request.form.get('model'):
                 submitted_model = request.form.get('model')
                 if submitted_model not in [choice[0] for choice in form.model.choices]:
                     form.model.choices.append((submitted_model, submitted_model))
         
-        # Get conditions
         conditions_response = supabase.table('car_listings').select('condition').execute()
         unique_conditions = list(set([item['condition'] for item in conditions_response.data if item.get('condition')]))
-        if unique_conditions:  # Only update if we have values
+        if unique_conditions:
             form.condition.choices = [('', 'Select Condition')] + [(cond, cond.capitalize()) for cond in sorted(unique_conditions)]
         
     except Exception as e:
@@ -216,7 +208,6 @@ def search():
     
     if form.validate_on_submit():
         try:
-            # Build query based on form inputs
             query = supabase.table('car_listings').select('*')
             
             if form.brand.data:
@@ -236,7 +227,12 @@ def search():
             
             results = query.execute()
             
-            # Store search parameters and results in session to pass to results page
+            for car in results.data:
+                if car.get('image_path'):
+                    car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
+                elif car.get('image_data'):
+                    car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+            
             session['search_results'] = results.data
             session['search_params'] = {
                 'brand': form.brand.data,
@@ -248,18 +244,12 @@ def search():
                 'location': form.location.data
             }
             
-            # Add debug information
-            print(f"Search results: {len(results.data)} cars found")
-            
             return redirect(url_for('search_results'))
             
         except Exception as e:
             flash(f'Error searching for cars: {str(e)}', 'danger')
-            print(f"Error searching for cars: {str(e)}")
             return redirect(url_for('search'))
     elif request.method == 'POST':
-        # If form validation failed, show the errors
-        print("Form validation failed with errors:", form.errors)
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
@@ -268,14 +258,9 @@ def search():
 
 @app.route('/search-results')
 def search_results():
-    # Retrieve results and parameters from session
     results = session.get('search_results', [])
     search_params = session.get('search_params', {})
     
-    # Add debug information
-    print(f"Displaying {len(results)} search results")
-    
-    # Clear the session data after retrieving it
     session.pop('search_results', None)
     session.pop('search_params', None)
     
@@ -283,77 +268,18 @@ def search_results():
                          results=results,
                          search_params=search_params)
 
-# Add a new route for AJAX model loading
 @app.route('/get_models/<brand>')
 def get_models(brand):
     try:
-        # FIXED: This should be consistent with the table name used elsewhere
         models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
-        
-        # Add debug information
-        print(f"Found {len(models_response.data)} models for brand {brand}")
-        
         models = list(set([item['model'] for item in models_response.data if item.get('model')]))
         return jsonify({'models': sorted(models)})
     except Exception as e:
-        print(f"Error fetching models for brand {brand}: {str(e)}")
+        print(f"Error fetching models: {str(e)}")
         return jsonify({'models': []})
-
-
-@app.before_request
-def check_user_type():
-    # List of routes that sellers should be redirected from if they try to access
-    buyer_only_routes = []
-    
-    # List of routes that buyers should be redirected from if they try to access
-    seller_only_routes = []
-    
-    # Get current user type from session
-    user_type = session.get('user', {}).get('user_type')
-    
-    # If user is logged in and has a type
-    if user_type:
-        # If seller tries to access buyer-only route
-        if user_type == 'seller' and request.path in buyer_only_routes:
-            flash('That page is for buyers only.', 'warning')
-            return redirect(url_for('sellers'))
-            
-        # If buyer tries to access seller-only route
-        elif user_type == 'buyer' and request.path in seller_only_routes:
-            flash('That page is for sellers only.', 'warning')
-            return redirect(url_for('homepage'))
-
-
-@app.route('/confirm-email', methods=['GET'])
-def confirm_email():
-    # Get the token from the query parameters
-    token = request.args.get('token')
-    
-    if not token:
-        flash('Invalid confirmation link.', 'danger')
-        return redirect(url_for('login'))
-    
-    try:
-        # Use the token to verify the user's email
-        result = supabase.auth.verify_email_otp({
-            "token": token,
-            "type": "signup"
-        })
-        
-        if result and result.user:
-            # Email confirmed successfully
-            flash('Your email has been confirmed successfully! You can now log in.', 'success')
-        else:
-            flash('Email verification failed.', 'danger')
-            
-    except Exception as e:
-        flash(f'Email confirmation error: {str(e)}', 'danger')
-    
-    return redirect(url_for('login'))
 
 @app.route('/sellers', methods=['GET', 'POST'])
 def sellers():
-    # Get brand and model options from database for the seller form
     brands, models = get_car_options_from_db()
     
     form = SellerForm()
@@ -361,18 +287,43 @@ def sellers():
     form.model.choices = models
     
     if form.validate_on_submit():
-        # Handle the file upload
-        image_path = None
-        if form.images.data:
-            image_file = form.images.data
-            filename = secure_filename(image_file.filename)
-            unique_filename = f"{form.name.data}_{form.brand.data}_{form.model.data}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-            image_file.save(file_path)
-            image_path = f"uploads/{unique_filename}"
-        
         try:
-            # Insert car listing into Supabase
+            image_url = None
+            image_path = None
+            
+            if form.images.data:
+                image_file = form.images.data
+                
+                if not allowed_file(image_file.filename):
+                    flash('Only JPG, PNG or GIF images are allowed.', 'danger')
+                    return redirect(url_for('sellers'))
+                
+                
+                filename = secure_filename(image_file.filename)
+                unique_filename = f"{uuid.uuid4()}_{filename}"
+                bucket_name = app.config['SUPABASE_STORAGE_BUCKET']
+                
+                try:
+                    file_content = image_file.read()
+                    
+                    # Upload to Supabase storage
+                    res = supabase.storage.from_(bucket_name).upload(
+                        path=unique_filename,
+                        file=file_content,
+                        file_options={
+                            "content-type": image_file.content_type
+                        }
+                    )
+                    
+                    # Get public URL
+                    image_url = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{bucket_name}/{unique_filename}"
+                    image_path = f"{bucket_name}/{unique_filename}"
+                    
+                except Exception as upload_error:
+                    print(f"Upload error: {str(upload_error)}")
+                    flash('Image upload failed. Please try again.', 'danger')
+                    return redirect(url_for('sellers'))
+            
             listing_data = {
                 "seller_name": form.name.data,
                 "seller_email": form.email.data,
@@ -385,61 +336,42 @@ def sellers():
                 "condition": form.condition.data,
                 "location": form.location.data,
                 "description": form.description.data,
+                "image_url": image_url,
                 "image_path": image_path,
-                "user_id": session.get('user', {}).get('id', None)  # Link to user if logged in
+                "user_id": session.get('user', {}).get('id', None)
             }
             
             response = supabase.table('car_listings').insert(listing_data).execute()
             
-            flash('Your vehicle listing has been submitted successfully!', 'success')
+            flash('Vehicle listed successfully!', 'success')
             return redirect(url_for('sellers'))
+            
         except Exception as e:
             flash(f'Error submitting listing: {str(e)}', 'danger')
     
     return render_template('sellers.html', form=form)
 
-@app.route('/test-db')
-def test_db():
+def get_car_options_from_db():
     try:
-        # Check if Supabase is initialized
-        if not supabase:
-            return "Supabase client not initialized!", 500
+        brands_response = supabase.table('car_listings').select('brand').execute()
+        brands = [('', 'Select Brand')]
+        
+        if brands_response.data:
+            unique_brands = set(item['brand'] for item in brands_response.data if item.get('brand'))
+            brands.extend([(brand, brand) for brand in sorted(unique_brands)])
+        
+        models_response = supabase.table('car_listings').select('model').execute()
+        models = [('', 'Select Model')]
+        
+        if models_response.data:
+            unique_models = set(item['model'] for item in models_response.data if item.get('model'))
+            models.extend([(model, model) for model in sorted(unique_models)])
             
-        # Try to check tables
-        tables = ["user_profiles", "cars", "car_listings"]
-        results = {}
-        
-        for table in tables:
-            try:
-                query = supabase.table(table).select("*").limit(1).execute()
-                results[table] = f"Table exists, found {len(query.data)} records"
-            except Exception as e:
-                results[table] = f"Error: {str(e)}"
-                
-        # Also add environment variables check
-        env_vars = {
-            "SUPABASE_URL": Config.SUPABASE_URL,
-            "SUPABASE_KEY": "Present" if Config.SUPABASE_KEY else "Missing",
-            "DB_PASSWORD": "Present" if os.environ.get("DB_PASSWORD") else "Missing"
-        }
-        
-        return {
-            "database_tables": results,
-            "environment": env_vars
-        }
-        
+        return brands, models
     except Exception as e:
-        return f"Database test failed: {str(e)}", 500
-
-    
-@app.route('/check-env')
-def check_env():
-    return {
-        'SUPABASE_URL': os.environ.get("SUPABASE_URL"),
-        'SUPABASE_KEY_exists': bool(os.environ.get("SUPABASE_KEY"))
-    }
-    
- 
+        print(f"Error fetching car options: {str(e)}")
+        return [('', 'Select Brand'), ('Toyota', 'Toyota'), ('Honda', 'Honda')], \
+               [('', 'Select Model'), ('Corolla', 'Corolla'), ('Civic', 'Civic')]
 
 if __name__ == '__main__':
     print("Starting Flask application...")

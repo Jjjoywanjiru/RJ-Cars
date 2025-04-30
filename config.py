@@ -12,7 +12,7 @@ class Config:
     
     # Database Configuration
     DB_USER = os.environ.get('DB_USER', 'postgres')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD')  # Changed from hardcoded value
+    DB_PASSWORD = os.environ.get('DB_PASSWORD')
     DB_HOST = os.environ.get('DB_HOST', 'db.krxhfokngnugmuvnqcgl.supabase.co')
     DB_PORT = os.environ.get('DB_PORT', '5432')
     DB_NAME = os.environ.get('DB_NAME', 'postgres')
@@ -21,10 +21,12 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Supabase Configuration (FIXED - use variable names not values)
+    # Supabase Configuration
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-    
+    MAX_IMAGE_SIZE = 50 * 1024 * 1024  # 50MB
+    # Supabase Storage Bucket for car images
+    SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', 'car-images')
     
     SITE_URL = os.environ.get('SITE_URL', 'http://localhost:5000')  # Default for local testing
     

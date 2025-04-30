@@ -83,6 +83,18 @@
             padding: 40px;
             font-size: 1.2em;
         }
+        .contact-btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        .contact-btn:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -116,8 +128,18 @@
             <div class="results-grid">
                 {% for car in results %}
                     <div class="car-card">
-                        {% if car.image_path %}
-                            <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.brand }} {{ car.model }}">
+                        {% if car.image_url %}
+                            <img src="{{ car.image_url }}" alt="{{ car.brand }} {{ car.model }}">
+                        {% elif car.image_data %}
+                            <img src="data:image/jpeg;base64,{{ car.image_data }}" alt="{{ car.brand }} {{ car.model }}">
+                        {% elif car.image_path %}
+                            {% if car.image_path.startswith('car-images/') %}
+                                <!-- Supabase Storage URL -->
+                                <img src="{{ config.SUPABASE_URL }}/storage/v1/object/public/{{ car.image_path }}" alt="{{ car.brand }} {{ car.model }}">
+                            {% else %}
+                                <!-- Legacy static file -->
+                                <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.brand }} {{ car.model }}">
+                            {% endif %}
                         {% else %}
                             <img src="{{ url_for('static', filename='images/default-car.jpg') }}" alt="Default car image">
                         {% endif %}
@@ -130,19 +152,20 @@
                         {% if car.description %}
                             <p><strong>Description:</strong> {{ car.description }}</p>
                         {% endif %}
+                        <a href="tel:{{ car.seller_phone }}" class="contact-btn">Contact Seller</a>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
             <div class="no-results">
-                <h3>No vehicles found matching your search criteria.</h3>
-                <p>Try adjusting your search parameters or <a href="{{ url_for('sellers') }}">contact our sellers</a> for specific requests.</p>
+                <h2>No vehicles found matching your criteria</h2>
+                <p>Try adjusting your search parameters or <a href="{{ url_for('sellers') }}">check back later</a> for new listings.</p>
             </div>
         {% endif %}
     </div>
 
     <div class="footer">
-        <p>&copy; 2025 RJ Cars. All rights reserved.</p>
+        <p>&copy; 2023 RJ Cars. All rights reserved.</p>
     </div>
 </body>
 </html>
