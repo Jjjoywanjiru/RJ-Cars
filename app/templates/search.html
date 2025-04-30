@@ -4,7 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RJ Cars - Your Trusted Car Dealer</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // When brand changes, load models
+            $('#brand').change(function() {
+                var brand = $(this).val();
+                if (brand) {
+                    $.getJSON('/get_models/' + brand, function(data) {
+                        var modelSelect = $('#model');
+                        modelSelect.empty();
+                        modelSelect.append('<option value="">Select Model</option>');
+                        $.each(data.models, function(key, value) {
+                            modelSelect.append('<option value="' + value + '">' + value + '</option>');
+                        });
+                    });
+                } else {
+                    $('#model').empty().append('<option value="">Select Model</option>');
+                }
+            });
     
+            // Initialize form with any previously selected values
+            {% if form.brand.data %}
+                $('#brand').trigger('change');
+                setTimeout(function() {
+                    $('#model').val('{{ form.model.data }}');
+                }, 200);
+            {% endif %}
+        });
+    </script>
 </head>
 <body>
     <div class="header">
@@ -13,14 +41,15 @@
     </div>
 
     <div class="nav">
-        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('homepage') }}">Home</a>
         <a href="{{ url_for('featuredCars') }}">Featured Cars</a>
         <a href="{{ url_for('search') }}">Search vehicles</a>
+        <a href="{{ url_for('sellers') }}">Sellers</a>
 
     </div>
 
     <div class="search-form">
-        <form method="GET" action="{{ url_for('search') }}">
+        <form method="POST" action="{{ url_for('search') }}">
             {{ form.hidden_tag() }}
             <div>
                 {{ form.brand.label }}<br>

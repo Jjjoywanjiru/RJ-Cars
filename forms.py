@@ -22,32 +22,13 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Continue')
     
 class SearchForm(FlaskForm):
-    brand = SelectField('Brand', choices=[
-        ('', 'Select Brand'),
-        ('Toyota', 'Toyota'),
-        ('Honda', 'Honda'),
-        ('Ford', 'Ford')
-    ], validators=[Optional()])
-    
-    model = SelectField('Model', choices=[
-        ('', 'Select Model'),
-        ('Corolla', 'Corolla'),
-        ('Civic', 'Civic'),
-        ('Mustang', 'Mustang')
-    ], validators=[Optional()])
-    
+    brand = SelectField('Brand', choices=[], validators=[Optional()])
+    model = SelectField('Model', choices=[], validators=[Optional()])
     year = IntegerField('Year', validators=[Optional()])
     price = IntegerField('Price', validators=[Optional()])
     mileage = IntegerField('Mileage', validators=[Optional()])
-    
-    condition = SelectField('Condition', choices=[
-        ('', 'Select Condition'),
-        ('new', 'New'),
-        ('used', 'Used')
-    ], validators=[Optional()])
-    
+    condition = SelectField('Condition', choices=[], validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
-    
     submit = SubmitField('Search')
     
     

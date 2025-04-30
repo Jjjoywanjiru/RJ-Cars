@@ -149,48 +149,98 @@ def logout():
 def search():
     form = SearchForm()
     
+    # Fetch distinct values for dropdowns
+    try:
+        # Get brands
+        brands_response = supabase.table('car_listings').select('brand').execute()
+        unique_brands = list(set([item['brand'] for item in brands_response.data if item['brand']]))
+        form.brand.choices = [('', 'Select Brand')] + [(brand, brand) for brand in sorted(unique_brands)]
+        
+        # Initialize model choices
+        form.model.choices = [('', 'Select Model')]
+        
+        # Get conditions
+        conditions_response = supabase.table('car_listings').select('condition').execute()
+        unique_conditions = list(set([item['condition'] for item in conditions_response.data if item['condition']]))
+        form.condition.choices = [('', 'Select Condition')] + [(cond, cond.capitalize()) for cond in sorted(unique_conditions)]
+        
+    except Exception as e:
+        flash('Error loading search filters.', 'danger')
+    
     if form.validate_on_submit():
-        # Build query for Supabase
-        query = supabase.table('cars').select('*')
-        
-        if form.brand.data:
-            query = query.eq('brand', form.brand.data)
-        if form.model.data:
-            query = query.eq('model', form.model.data)
-        if form.year.data:
-            query = query.eq('year', form.year.data)
-        if form.price.data:
-            query = query.lte('price', form.price.data)  # Less than or equal to
-        if form.mileage.data:
-            query = query.lte('mileage', form.mileage.data)
-        if form.condition.data:
-            query = query.eq('condition', form.condition.data)
-        if form.location.data:
-            query = query.ilike('location', f'%{form.location.data}%')
-        
         try:
+            # Build query based on form inputs
+            query = supabase.table('car_listings').select('*')
+            
+            if form.brand.data:
+                query = query.eq('brand', form.brand.data)
+            if form.model.data:
+                query = query.eq('model', form.model.data)
+            if form.year.data:
+                query = query.eq('year', form.year.data)
+            if form.price.data:
+                query = query.lte('price', form.price.data)
+            if form.mileage.data:
+                query = query.lte('mileage', form.mileage.data)
+            if form.condition.data:
+                query = query.eq('condition', form.condition.data)
+            if form.location.data:
+                query = query.ilike('location', f'%{form.location.data}%')
+            
             results = query.execute()
-            return render_template('search_results.html', 
-                                form=form,
-                                search_params=form.data,
-                                results=results.data)
+            
+            # Store search parameters and results in session to pass to results page
+            session['search_results'] = results.data
+            session['search_params'] = {
+                'brand': form.brand.data,
+                'model': form.model.data,
+                'year': form.year.data,
+                'price': form.price.data,
+                'mileage': form.mileage.data,
+                'condition': form.condition.data,
+                'location': form.location.data
+            }
+            
+            return redirect(url_for('search_results'))
+            
         except Exception as e:
-            flash('Error searching for cars.', 'danger')
-            return render_template('search_results.html', 
-                                form=form,
-                                search_params=form.data,
-                                results=[])
+            flash(f'Error searching for cars: {str(e)}', 'danger')
+            return redirect(url_for('search'))
     
     return render_template('search.html', form=form)
+
+@app.route('/search-results')
+def search_results():
+    # Retrieve results and parameters from session
+    results = session.get('search_results', [])
+    search_params = session.get('search_params', {})
+    
+    # Clear the session data after retrieving it
+    session.pop('search_results', None)
+    session.pop('search_params', None)
+    
+    return render_template('searchresults.html', 
+                         results=results,
+                         search_params=search_params)
+
+# Add a new route for AJAX model loading
+@app.route('/get_models/<brand>')
+def get_models(brand):
+    try:
+        models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
+        models = list(set([item['model'] for item in models_response.data if item['model']]))
+        return jsonify({'models': sorted(models)})
+    except Exception as e:
+        return jsonify({'models': []})
 
 
 @app.before_request
 def check_user_type():
     # List of routes that sellers should be redirected from if they try to access
-    buyer_only_routes = ['/search']
+    buyer_only_routes = []
     
     # List of routes that buyers should be redirected from if they try to access
-    seller_only_routes = ['/sellers']
+    seller_only_routes = []
     
     # Get current user type from session
     user_type = session.get('user', {}).get('user_type')
@@ -316,6 +366,8 @@ def check_env():
         'SUPABASE_URL': os.environ.get("SUPABASE_URL"),
         'SUPABASE_KEY_exists': bool(os.environ.get("SUPABASE_KEY"))
     }
+    
+ 
 
 if __name__ == '__main__':
     print("Starting Flask application...")
