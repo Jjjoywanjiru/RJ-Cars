@@ -5,7 +5,7 @@ from flask_wtf.file import FileField, FileAllowed
 
 
 class SignupForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Full Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     confirm = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
@@ -24,7 +24,7 @@ class SearchForm(FlaskForm):
     model = SelectField('Model', choices=[], validators=[Optional()])
     year = IntegerField('Year', validators=[Optional()])
     price = IntegerField('Price', validators=[Optional()])
-    mileage = IntegerField('Mileage', validators=[Optional()])
+    mileage = IntegerField('Mileage (If New fill 0)', validators=[Optional()])
     # Initialize with default conditions
     condition = SelectField('Condition', choices=[
         ('', 'Select Condition'),
