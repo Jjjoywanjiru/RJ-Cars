@@ -35,6 +35,17 @@
             <h2>Offer Your Vehicle</h2>
         </div>
         
+        <!-- Flash messages - Added to match login page -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         <div class="page-intro">
             <p>At RJ Cars, we carefully select only the finest classic and vintage automobiles for our discerning clientele. If you own an exceptional vehicle that you believe meets our exacting standards, we invite you to submit your details below.</p>
             <p>Our team of specialists will review your submission and contact you to discuss potential acquisition or consignment opportunities.</p>
