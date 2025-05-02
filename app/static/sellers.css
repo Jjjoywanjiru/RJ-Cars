@@ -374,3 +374,68 @@ h3 {
     padding: 20px 15px;
   }
 }
+
+/* Promotional Options Styling */
+.promo-options {
+  margin-top: 10px;
+}
+
+.promo-intro {
+  margin-bottom: 20px;
+  color: #444;
+}
+
+.promo-option {
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #eee;
+  border-radius: 2px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.promo-option:hover {
+  background-color: #f9f7f4;
+  border-color: #ddd;
+}
+
+.promo-option input[type="radio"] {
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.promo-option label {
+  display: inline;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: #333;
+}
+
+.promo-price {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  font-weight: 600;
+  color: #b89b72;
+}
+
+.promo-description {
+  margin-top: 10px;
+  margin-left: 25px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Selected option styling */
+.promo-option input[type="radio"]:checked + label {
+  color: #b89b72;
+}
+
+.promo-option input[type="radio"]:checked ~ .promo-price {
+  font-weight: 700;
+}
+
+.promo-option:has(input[type="radio"]:checked) {
+  border-color: #b89b72;
+  background-color: rgba(184, 155, 114, 0.05);
+}
