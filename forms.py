@@ -41,21 +41,21 @@ class SellerForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     phone = StringField('Phone', validators=[DataRequired()])
     
-    # Car information (choices will be populated dynamically)
-    brand = SelectField('Brand', validators=[Optional()])
-    model = SelectField('Model', validators=[Optional()])
+    # Car information - changed to StringField to allow any input
+    brand = StringField('Brand', validators=[DataRequired()])
+    model = StringField('Model', validators=[DataRequired()])
     
-    year = IntegerField('Year', validators=[Optional()])
-    price = IntegerField('Price', validators=[Optional()])
-    mileage = IntegerField('Mileage', validators=[Optional()])
+    year = IntegerField('Year', validators=[DataRequired()])
+    price = IntegerField('Price', validators=[DataRequired()])
+    mileage = IntegerField('Mileage', validators=[DataRequired()])
     
     condition = SelectField('Condition', choices=[
         ('', 'Select Condition'),
         ('new', 'New'),
         ('used', 'Used')
-    ], validators=[Optional()])
+    ], validators=[DataRequired()])
     
-    location = StringField('Location', validators=[Optional()])
+    location = StringField('Location', validators=[DataRequired()])
     
     # Additional fields
     description = TextAreaField('Description', validators=[Optional()])

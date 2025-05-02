@@ -177,31 +177,30 @@ def logout():
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     form = SearchForm()
-    form.condition.choices = [('', 'Select Condition'), ('new', 'New'), ('used', 'Used')]
     
     try:
+        # Load unique brands from database
         brands_response = supabase.table('car_listings').select('brand').execute()
         unique_brands = list(set([item['brand'] for item in brands_response.data if item.get('brand')]))
         form.brand.choices = [('', 'Select Brand')] + [(brand, brand) for brand in sorted(unique_brands)]
         
+        # Initialize model choices
         form.model.choices = [('', 'Select Model')]
         
-        if request.method == 'POST' and request.form.get('brand'):
-            brand = request.form.get('brand')
-            models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
-            unique_models = list(set([item['model'] for item in models_response.data if item.get('model')]))
-            form.model.choices = [('', 'Select Model')] + [(model, model) for model in sorted(unique_models)]
-            
-            if request.form.get('model'):
-                submitted_model = request.form.get('model')
-                if submitted_model not in [choice[0] for choice in form.model.choices]:
-                    form.model.choices.append((submitted_model, submitted_model))
-        
+        # Load condition options
         conditions_response = supabase.table('car_listings').select('condition').execute()
         unique_conditions = list(set([item['condition'] for item in conditions_response.data if item.get('condition')]))
         if unique_conditions:
             form.condition.choices = [('', 'Select Condition')] + [(cond, cond.capitalize()) for cond in sorted(unique_conditions)]
+        else:
+            form.condition.choices = [('', 'Select Condition'), ('new', 'New'), ('used', 'Used')]
         
+        # If a brand is selected, load models for that brand
+        if form.brand.data:
+            models_response = supabase.table('car_listings').select('model').eq('brand', form.brand.data).execute()
+            unique_models = list(set([item['model'] for item in models_response.data if item.get('model')]))
+            form.model.choices = [('', 'Select Model')] + [(model, model) for model in sorted(unique_models)]
+            
     except Exception as e:
         flash(f'Error loading search filters: {str(e)}', 'danger')
         print(f"Error loading search filters: {str(e)}")
@@ -280,11 +279,7 @@ def get_models(brand):
 
 @app.route('/sellers', methods=['GET', 'POST'])
 def sellers():
-    brands, models = get_car_options_from_db()
-    
     form = SellerForm()
-    form.brand.choices = brands
-    form.model.choices = models
     
     if form.validate_on_submit():
         try:
@@ -350,28 +345,6 @@ def sellers():
             flash(f'Error submitting listing: {str(e)}', 'danger')
     
     return render_template('sellers.html', form=form)
-
-def get_car_options_from_db():
-    try:
-        brands_response = supabase.table('car_listings').select('brand').execute()
-        brands = [('', 'Select Brand')]
-        
-        if brands_response.data:
-            unique_brands = set(item['brand'] for item in brands_response.data if item.get('brand'))
-            brands.extend([(brand, brand) for brand in sorted(unique_brands)])
-        
-        models_response = supabase.table('car_listings').select('model').execute()
-        models = [('', 'Select Model')]
-        
-        if models_response.data:
-            unique_models = set(item['model'] for item in models_response.data if item.get('model'))
-            models.extend([(model, model) for model in sorted(unique_models)])
-            
-        return brands, models
-    except Exception as e:
-        print(f"Error fetching car options: {str(e)}")
-        return [('', 'Select Brand'), ('Toyota', 'Toyota'), ('Honda', 'Honda')], \
-               [('', 'Select Model'), ('Corolla', 'Corolla'), ('Civic', 'Civic')]
 
 if __name__ == '__main__':
     print("Starting Flask application...")

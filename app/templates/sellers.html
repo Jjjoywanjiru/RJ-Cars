@@ -75,7 +75,7 @@
                 <div class="form-section">
                     <div>
                         {{ form.brand.label }}
-                        {{ form.brand(placeholder="Vehicle manufacturer") }}
+                        {{ form.brand(placeholder="Enter vehicle brand (e.g., Tesla, Ferrari)") }}
                         {% for error in form.brand.errors %}
                             <span class="error-message">{{ error }}</span>
                         {% endfor %}
@@ -83,7 +83,7 @@
             
                     <div>
                         {{ form.model.label }}
-                        {{ form.model(placeholder="Vehicle model") }}
+                        {{ form.model(placeholder="Enter vehicle model (e.g., Model X, 488 GTB)") }}
                         {% for error in form.model.errors %}
                             <span class="error-message">{{ error }}</span>
                         {% endfor %}
