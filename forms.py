@@ -22,16 +22,18 @@ class RegistrationForm(FlaskForm):
 class SearchForm(FlaskForm):
     brand = SelectField('Brand', choices=[], validators=[Optional()])
     model = SelectField('Model', choices=[], validators=[Optional()])
-    year = IntegerField('Year', validators=[Optional()])
-    price = IntegerField('Price', validators=[Optional()])
-    mileage = IntegerField('Mileage (If New fill 0)', validators=[Optional()])
+    year = SelectField('Year', choices=[], validators=[Optional()])
+    min_price = IntegerField('Min Price', validators=[Optional()])
+    max_price = IntegerField('Max Price', validators=[Optional()])
+    min_mileage = IntegerField('Min Mileage', validators=[Optional()])
+    max_mileage = IntegerField('Max Mileage', validators=[Optional()])
     # Initialize with default conditions
     condition = SelectField('Condition', choices=[
         ('', 'Select Condition'),
         ('new', 'New'),
         ('used', 'Used')
     ], validators=[Optional()])
-    location = StringField('Location', validators=[Optional()])
+    location = SelectField('Location', choices=[], validators=[Optional()])
     submit = SubmitField('Search')
     
     

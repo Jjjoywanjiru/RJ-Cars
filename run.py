@@ -187,6 +187,16 @@ def search():
         # Initialize model choices
         form.model.choices = [('', 'Select Model')]
         
+        # Load year options from database
+        years_response = supabase.table('car_listings').select('year').execute()
+        unique_years = list(set([item['year'] for item in years_response.data if item.get('year')]))
+        form.year.choices = [('', 'Select Year')] + [(str(year), str(year)) for year in sorted(unique_years)]
+        
+        # Load location options from database
+        locations_response = supabase.table('car_listings').select('location').execute()
+        unique_locations = list(set([item['location'] for item in locations_response.data if item.get('location')]))
+        form.location.choices = [('', 'Select Location')] + [(loc, loc) for loc in sorted(unique_locations)]
+        
         # Load condition options
         conditions_response = supabase.table('car_listings').select('condition').execute()
         unique_conditions = list(set([item['condition'] for item in conditions_response.data if item.get('condition')]))
@@ -214,15 +224,19 @@ def search():
             if form.model.data:
                 query = query.eq('model', form.model.data)
             if form.year.data:
-                query = query.eq('year', form.year.data)
-            if form.price.data:
-                query = query.lte('price', form.price.data)
-            if form.mileage.data:
-                query = query.lte('mileage', form.mileage.data)
+                query = query.eq('year', int(form.year.data))
+            if form.min_price.data:
+                query = query.gte('price', form.min_price.data)
+            if form.max_price.data:
+                query = query.lte('price', form.max_price.data)
+            if form.min_mileage.data:
+                query = query.gte('mileage', form.min_mileage.data)
+            if form.max_mileage.data:
+                query = query.lte('mileage', form.max_mileage.data)
             if form.condition.data:
                 query = query.eq('condition', form.condition.data)
             if form.location.data:
-                query = query.ilike('location', f'%{form.location.data}%')
+                query = query.eq('location', form.location.data)
             
             results = query.execute()
             
@@ -237,8 +251,10 @@ def search():
                 'brand': form.brand.data,
                 'model': form.model.data,
                 'year': form.year.data,
-                'price': form.price.data,
-                'mileage': form.mileage.data,
+                'min_price': form.min_price.data,
+                'max_price': form.max_price.data,
+                'min_mileage': form.min_mileage.data,
+                'max_mileage': form.max_mileage.data,
                 'condition': form.condition.data,
                 'location': form.location.data
             }

@@ -113,26 +113,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         {{ form.year.label(class="form-label") }}
-                        {{ form.year(class="form-control", placeholder="Enter Year") }}
+                        {{ form.year(class="form-control") }}
                         {% for error in form.year.errors %}
-                            <span class="error-message">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-            
-                    <div class="form-group">
-                        {{ form.price.label(class="form-label") }}
-                        {{ form.price(class="form-control", placeholder="Enter Maximum Price") }}
-                        {% for error in form.price.errors %}
-                            <span class="error-message">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        {{ form.mileage.label(class="form-label") }}
-                        {{ form.mileage(class="form-control", placeholder="Enter Mileage") }}
-                        {% for error in form.mileage.errors %}
                             <span class="error-message">{{ error }}</span>
                         {% endfor %}
                     </div>
@@ -147,9 +129,45 @@
                 </div>
                 
                 <div class="form-row">
+                    <div class="form-group">
+                        {{ form.min_price.label(class="form-label") }}
+                        {{ form.min_price(class="form-control", placeholder="Enter Minimum Price") }}
+                        {% for error in form.min_price.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div class="form-group">
+                        {{ form.max_price.label(class="form-label") }}
+                        {{ form.max_price(class="form-control", placeholder="Enter Maximum Price") }}
+                        {% for error in form.max_price.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.min_mileage.label(class="form-label") }}
+                        {{ form.min_mileage(class="form-control", placeholder="Enter Minimum Mileage") }}
+                        {% for error in form.min_mileage.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+            
+                    <div class="form-group">
+                        {{ form.max_mileage.label(class="form-label") }}
+                        {{ form.max_mileage(class="form-control", placeholder="Enter Maximum Mileage") }}
+                        {% for error in form.max_mileage.errors %}
+                            <span class="error-message">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
                     <div class="form-group full-width">
                         {{ form.location.label(class="form-label") }}
-                        {{ form.location(class="form-control", placeholder="Enter Location") }}
+                        {{ form.location(class="form-control") }}
                         {% for error in form.location.errors %}
                             <span class="error-message">{{ error }}</span>
                         {% endfor %}
