@@ -271,6 +271,55 @@ def search():
     
     return render_template('search.html', form=form)
 
+
+# Add these two new route handlers to your run.py file
+
+@app.route('/get_years/')
+def get_years():
+    brand = request.args.get('brand')
+    model = request.args.get('model')
+    
+    if not brand or not model:
+        return jsonify({'years': []})
+    
+    try:
+        # Query database for years matching the selected brand and model
+        years_response = supabase.table('car_listings')\
+            .select('year')\
+            .eq('brand', brand)\
+            .eq('model', model)\
+            .execute()
+        
+        unique_years = list(set([item['year'] for item in years_response.data if item.get('year')]))
+        
+        return jsonify({'years': sorted(unique_years)})
+    except Exception as e:
+        print(f"Error fetching years: {str(e)}")
+        return jsonify({'years': []})
+
+@app.route('/get_locations/')
+def get_locations():
+    brand = request.args.get('brand')
+    model = request.args.get('model')
+    
+    if not brand or not model:
+        return jsonify({'locations': []})
+    
+    try:
+        # Query database for locations matching the selected brand and model
+        locations_response = supabase.table('car_listings')\
+            .select('location')\
+            .eq('brand', brand)\
+            .eq('model', model)\
+            .execute()
+        
+        unique_locations = list(set([item['location'] for item in locations_response.data if item.get('location')]))
+        
+        return jsonify({'locations': sorted(unique_locations)})
+    except Exception as e:
+        print(f"Error fetching locations: {str(e)}")
+        return jsonify({'locations': []})
+
 @app.route('/search-results')
 def search_results():
     results = session.get('search_results', [])

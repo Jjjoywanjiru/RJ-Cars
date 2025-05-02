@@ -33,6 +33,13 @@
                             if (currentModel && modelSelect.find('option[value="' + currentModel + '"]').length) {
                                 modelSelect.val(currentModel);
                             }
+                            
+                            // Reset year and location dropdowns when brand changes
+                            $('#year').empty().append('<option value="">Select Year</option>');
+                            $('#location').empty().append('<option value="">Select Location</option>');
+                            
+                            // Trigger model change to update dependent dropdowns
+                            modelSelect.trigger('change');
                         },
                         error: function(xhr, status, error) {
                             console.error('Error loading models:', error);
@@ -42,6 +49,74 @@
                     });
                 } else {
                     $('#model').empty().append('<option value="">Select Model</option>');
+                    $('#year').empty().append('<option value="">Select Year</option>');
+                    $('#location').empty().append('<option value="">Select Location</option>');
+                }
+            });
+            
+            // When model changes, load years and locations
+            $('#model').change(function() {
+                var brand = $('#brand').val();
+                var model = $(this).val();
+                
+                if (brand && model) {
+                    // Load years for the selected brand and model
+                    $.ajax({
+                        url: '/get_years/',
+                        type: 'GET',
+                        data: {
+                            brand: brand,
+                            model: model
+                        },
+                        success: function(data) {
+                            var yearSelect = $('#year');
+                            var currentYear = yearSelect.val();
+                            
+                            yearSelect.empty();
+                            yearSelect.append('<option value="">Select Year</option>');
+                            
+                            $.each(data.years, function(i, item) {
+                                yearSelect.append('<option value="' + item + '">' + item + '</option>');
+                            });
+                            
+                            // If we had a year selected and it's in the new options, restore it
+                            if (currentYear && yearSelect.find('option[value="' + currentYear + '"]').length) {
+                                yearSelect.val(currentYear);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error loading years:', error);
+                        }
+                    });
+                    
+                    // Load locations for the selected brand and model
+                    $.ajax({
+                        url: '/get_locations/',
+                        type: 'GET',
+                        data: {
+                            brand: brand,
+                            model: model
+                        },
+                        success: function(data) {
+                            var locationSelect = $('#location');
+                            var currentLocation = locationSelect.val();
+                            
+                            locationSelect.empty();
+                            locationSelect.append('<option value="">Select Location</option>');
+                            
+                            $.each(data.locations, function(i, item) {
+                                locationSelect.append('<option value="' + item + '">' + item + '</option>');
+                            });
+                            
+                            // If we had a location selected and it's in the new options, restore it
+                            if (currentLocation && locationSelect.find('option[value="' + currentLocation + '"]').length) {
+                                locationSelect.val(currentLocation);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error loading locations:', error);
+                        }
+                    });
                 }
             });
     
@@ -50,13 +125,22 @@
                 $('#brand').trigger('change');
                 setTimeout(function() {
                     $('#model').val("{{ form.model.data }}");
-                    console.log("Setting model to:", "{{ form.model.data }}");
-                }, 1000); // Increased timeout to ensure AJAX completes
+                    $('#model').trigger('change');
+                    
+                    setTimeout(function() {
+                        $('#year').val("{{ form.year.data }}");
+                        $('#location').val("{{ form.location.data }}");
+                    }, 500);
+                }, 500);
             {% endif %}
             
-            // Add log before form submission to check model value
+            // Add log before form submission to check values
             $('form').submit(function() {
-                console.log("Submitting form with model value:", $('#model').val());
+                console.log("Submitting form with values:", {
+                    model: $('#model').val(),
+                    year: $('#year').val(),
+                    location: $('#location').val()
+                });
             });
         });
     </script>
