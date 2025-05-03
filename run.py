@@ -28,12 +28,19 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         # Check if user is logged in
         if 'user' not in session:
-            flash('Please log in to access this page', 'danger')
             # Store the requested URL for redirecting after login
             session['next_url'] = request.url
-            return redirect(url_for('login'))
+            if request.is_xhr:
+                # For AJAX requests
+                return jsonify({'status': 'error', 'message': 'Authentication required'}), 401
+            flash('Please log in to access this page', 'danger')
+            return redirect(url_for('unauthorized'))
         return f(*args, **kwargs)
     return decorated_function
+
+@app.route('/unauthorized')
+def unauthorized():
+    return render_template('unauthorized.html')
 
 # Initialize Supabase storage bucket
 def initialize_supabase_storage():
@@ -117,11 +124,21 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        # Validate inputs
+        if not email or not password:
+            flash('Please provide both email and password', 'danger')
+            return render_template('login.html')
+        
         try:
+            # Authenticate with Supabase
             auth_response = supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
+            
+            if not auth_response.user:
+                flash('Invalid email or password', 'danger')
+                return render_template('login.html')
             
             if not auth_response.user.email_confirmed_at:
                 flash('Login failed: Email not confirmed. Please check your inbox.', 'danger')
@@ -155,7 +172,11 @@ def login():
                 flash('User profile not found.', 'danger')
                 
         except Exception as e:
-            flash(f'Login failed: {str(e)}', 'danger')
+            error_message = str(e)
+            if "Invalid login credentials" in error_message:
+                flash('Invalid email or password', 'danger')
+            else:
+                flash(f'Login failed: {error_message}', 'danger')
     
     return render_template('login.html')
 
@@ -209,15 +230,18 @@ def logout():
 @app.before_request
 def check_authentication():
     # List of routes that don't require authentication
-    public_routes = ['static', 'login', 'register', 'signup', 'logout', 'home']
+    public_routes = ['static', 'login', 'register', 'signup', 'logout', 'home', 'unauthorized']
     
     # Check if the route requires authentication
     if request.endpoint and request.endpoint not in public_routes:
         if 'user' not in session:
-            flash('Please log in to access this page', 'danger')
             # Store the requested URL for redirecting after login
             session['next_url'] = request.url
-            return redirect(url_for('login'))
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # For AJAX requests
+                return jsonify({'status': 'error', 'message': 'Authentication required'}), 401
+            flash('Please log in to access this page', 'danger')
+            return redirect(url_for('unauthorized'))
 
 @app.route('/search', methods=['GET', 'POST'])
 @login_required

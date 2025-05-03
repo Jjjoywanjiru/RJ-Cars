@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unauthorized - Vintage Luxury Cars</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero hero-small">
+        <div class="hero-content">
+            <div class="logo">Vintage <span class="logo-accent">Luxury</span></div>
+            <h1>Access Denied</h1>
+            <p>Please log in to access this page</p>
+        </div>
+    </div>
+
+    <div class="login-section">
+        <div class="login-container">
+            <div class="section-message">
+                <h2>Unauthorized Access</h2>
+                <p>You must be logged in to view this content.</p>
+                <div class="action-buttons">
+                    <a href="{{ url_for('login') }}" class="btn">Log In</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-logo">Vintage <span class="logo-accent">Luxury</span></div>
+        <p>&copy; 2025 Vintage Luxury Cars. All rights reserved.</p>
+    </footer>
+</body>
+</html>
