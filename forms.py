@@ -37,6 +37,7 @@ class SearchForm(FlaskForm):
     submit = SubmitField('Search')
     
     
+
 class SellerForm(FlaskForm):
     # Personal information
     name = StringField('Name', validators=[DataRequired()])
@@ -65,5 +66,16 @@ class SellerForm(FlaskForm):
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
     ])
+    
+    # Add promotion field
+    promotion = RadioField(
+        'Promotional Placement',
+        choices=[
+            ('none', 'Standard Listing'),
+            ('featured', 'Featured Cars Collection'),
+            ('homepage', 'Homepage Spotlight')
+        ],
+        default='none'
+    )
     
     submit = SubmitField('Submit Listing')

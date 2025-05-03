@@ -159,31 +159,37 @@
                     {% endfor %}
                 </div>
                 <h2>Promotional Placement</h2>
-                <div class="form-section">
+                    <div class="form-section">
                     <div class="promo-options">
                         <p class="promo-intro">Enhance your vehicle's visibility with our premium placement options:</p>
                         
                         <div class="promo-option">
-                            <input type="radio" id="no-promo" name="promotion" value="none" checked>
-                            <label for="no-promo">Standard Listing (Included)</label>
-                            <span class="promo-price">$0</span>
-                        </div>
-                        
-                        <div class="promo-option">
-                            <input type="radio" id="featured-cars" name="promotion" value="featured">
-                            <label for="featured-cars">Featured Cars Collection</label>
-                            <span class="promo-price">$1,000</span>
-                            <p class="promo-description">Your vehicle will be showcased in our Featured Cars collection, viewed by thousands of collectors weekly.</p>
-                        </div>
-                        
-                        <div class="promo-option">
-                            <input type="radio" id="homepage" name="promotion" value="homepage">
-                            <label for="homepage">Homepage Spotlight</label>
-                            <span class="promo-price">$10,000</span>
-                            <p class="promo-description">Premium placement on our homepage, guaranteeing maximum exposure to our exclusive clientele.</p>
+                            {{ form.promotion(class="form-control") }}
+                            {% for option in form.promotion %}
+                                <div class="promo-option-item">
+                                    {{ option }}
+                                    <label for="{{ option.id }}">{{ option.label.text }}</label>
+                                    {% if option.data == 'none' %}
+                                        <span class="promo-price">$0</span>
+                                    {% elif option.data == 'featured' %}
+                                        <span class="promo-price">$1,000</span>
+                                        <p class="promo-description">Your vehicle will be showcased in our Featured Cars collection, viewed by thousands of collectors weekly.</p>
+                                    {% elif option.data == 'homepage' %}
+                                        <span class="promo-price">$10,000</span>
+                                        <p class="promo-description">Premium placement on our homepage, guaranteeing maximum exposure to our exclusive clientele.</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            {% if form.promotion.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.promotion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-</div>
+                </div>
         
                 <div>
                     {{ form.submit(value="Submit Your Listing") }}

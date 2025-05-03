@@ -84,6 +84,14 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
+# Helper function to get car data with image URLs
+def get_car_with_image_url(car):
+    if car.get('image_path'):
+        car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
+    elif car.get('image_data'):
+        car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+    return car
+
 # Routes
 @app.route('/')
 def home():
@@ -94,7 +102,14 @@ def home():
 @app.route('/homepage')
 @login_required
 def homepage():
-    return render_template('homepage.html')
+    # Get cars with homepage promotion
+    try:
+        homepage_cars_response = supabase.table('car_listings').select('*').eq('promotion', 'homepage').execute()
+        homepage_cars = [get_car_with_image_url(car) for car in homepage_cars_response.data]
+        return render_template('homepage.html', promoted_cars=homepage_cars)
+    except Exception as e:
+        flash(f'Error loading featured cars: {str(e)}', 'danger')
+        return render_template('homepage.html', promoted_cars=[])
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -113,7 +128,14 @@ def register():
 @app.route('/featuredCars')
 @login_required
 def featuredCars():
-    return render_template('featured-cars.html')
+    # Get cars with featured promotion
+    try:
+        featured_cars_response = supabase.table('car_listings').select('*').eq('promotion', 'featured').execute()
+        featured_cars = [get_car_with_image_url(car) for car in featured_cars_response.data]
+        return render_template('featured-cars.html', featured_cars=featured_cars)
+    except Exception as e:
+        flash(f'Error loading featured cars: {str(e)}', 'danger')
+        return render_template('featured-cars.html', featured_cars=[])
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -459,6 +481,9 @@ def sellers():
                     flash('Image upload failed. Please try again.', 'danger')
                     return redirect(url_for('sellers'))
             
+            # Get the promotion type from the form
+            promotion_type = form.promotion.data
+            
             listing_data = {
                 "seller_name": form.name.data,
                 "seller_email": form.email.data,
@@ -473,13 +498,23 @@ def sellers():
                 "description": form.description.data,
                 "image_url": image_url,
                 "image_path": image_path,
-                "user_id": session.get('user', {}).get('id', None)
+                "user_id": session.get('user', {}).get('id', None),
+                "promotion": promotion_type  # Add promotion type to database
             }
             
             response = supabase.table('car_listings').insert(listing_data).execute()
             
             flash('Vehicle listed successfully!', 'success')
-            return redirect(url_for('sellers'))
+            
+            # Redirect based on promotion type
+            if promotion_type == 'featured':
+                flash('Your car has been added to our Featured Cars collection!', 'success')
+                return redirect(url_for('featuredCars'))
+            elif promotion_type == 'homepage':
+                flash('Your car has been added to our Homepage Spotlight!', 'success')
+                return redirect(url_for('homepage'))
+            else:
+                return redirect(url_for('sellers'))
             
         except Exception as e:
             flash(f'Error submitting listing: {str(e)}', 'danger')
