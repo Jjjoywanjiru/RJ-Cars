@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 import base64
 from io import BytesIO
 import uuid
+from functools import wraps
 
 # Initialize Flask app
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
@@ -20,6 +21,19 @@ supabase = Config.init_supabase()
 
 # Ensure upload folder exists (for backup purposes)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if user is logged in
+        if 'user' not in session:
+            flash('Please log in to access this page', 'danger')
+            # Store the requested URL for redirecting after login
+            session['next_url'] = request.url
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Initialize Supabase storage bucket
 def initialize_supabase_storage():
@@ -66,14 +80,20 @@ def allowed_file(filename):
 # Routes
 @app.route('/')
 def home():
-    return render_template('login.html')
+    if 'user' in session:
+        return redirect(url_for('homepage'))
+    return redirect(url_for('login'))
 
 @app.route('/homepage')
+@login_required
 def homepage():
     return render_template('homepage.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if 'user' in session:
+        return redirect(url_for('homepage'))
+        
     registration_form = RegistrationForm()
     signup_form = SignupForm()
     
@@ -84,11 +104,15 @@ def register():
     return render_template('signup.html', form=signup_form, reg_form=registration_form)
 
 @app.route('/featuredCars')
+@login_required
 def featuredCars():
     return render_template('featured-cars.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'user' in session:
+        return redirect(url_for('homepage'))
+        
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -118,6 +142,11 @@ def login():
                 
                 flash('Logged in successfully!', 'success')
                 
+                # Check if there's a next URL to redirect to
+                next_url = session.pop('next_url', None)
+                if next_url:
+                    return redirect(next_url)
+                    
                 if user_profile.get('user_type') == 'seller':
                     return redirect(url_for('sellers'))
                 else:
@@ -132,6 +161,9 @@ def login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if 'user' in session:
+        return redirect(url_for('homepage'))
+        
     signup_form = SignupForm()
     registration_form = RegistrationForm()
     
@@ -172,9 +204,23 @@ def signup():
 def logout():
     session.pop('user', None)
     flash('You have been logged out.', 'success')
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
+
+@app.before_request
+def check_authentication():
+    # List of routes that don't require authentication
+    public_routes = ['static', 'login', 'register', 'signup', 'logout', 'home']
+    
+    # Check if the route requires authentication
+    if request.endpoint and request.endpoint not in public_routes:
+        if 'user' not in session:
+            flash('Please log in to access this page', 'danger')
+            # Store the requested URL for redirecting after login
+            session['next_url'] = request.url
+            return redirect(url_for('login'))
 
 @app.route('/search', methods=['GET', 'POST'])
+@login_required
 def search():
     form = SearchForm()
     
@@ -275,6 +321,7 @@ def search():
 # Add these two new route handlers to your run.py file
 
 @app.route('/get_years/')
+@login_required
 def get_years():
     brand = request.args.get('brand')
     model = request.args.get('model')
@@ -298,6 +345,7 @@ def get_years():
         return jsonify({'years': []})
 
 @app.route('/get_locations/')
+@login_required
 def get_locations():
     brand = request.args.get('brand')
     model = request.args.get('model')
@@ -321,6 +369,7 @@ def get_locations():
         return jsonify({'locations': []})
 
 @app.route('/search-results')
+@login_required
 def search_results():
     results = session.get('search_results', [])
     search_params = session.get('search_params', {})
@@ -333,6 +382,7 @@ def search_results():
                          search_params=search_params)
 
 @app.route('/get_models/<brand>')
+@login_required
 def get_models(brand):
     try:
         models_response = supabase.table('car_listings').select('model').eq('brand', brand).execute()
@@ -343,6 +393,7 @@ def get_models(brand):
         return jsonify({'models': []})
 
 @app.route('/sellers', methods=['GET', 'POST'])
+@login_required
 def sellers():
     form = SellerForm()
     
