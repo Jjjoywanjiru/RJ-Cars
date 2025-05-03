@@ -40,65 +40,62 @@
         </div>
         
         <div class="featured-cars" id="featured-cars-list">
-            <div class="car-card">
-                <div class="car-image">
-                    <img src="/api/placeholder/600/400" alt="Classic Mercedes">
+            {% if featured_cars %}
+                {% for car in featured_cars %}
+                <div class="car-card">
+                    <div class="car-image">
+                        {% if car.image_url %}
+                            <img src="{{ car.image_url }}" alt="{{ car.brand }} {{ car.model }}">
+                        {% else %}
+                            <img src="/api/placeholder/600/400" alt="{{ car.brand }} {{ car.model }}">
+                        {% endif %}
+                    </div>
+                    <div class="car-info">
+                        <h3>{{ car.year }} {{ car.brand }} {{ car.model }}</h3>
+                        <p>{{ car.description|truncate(80) if car.description else 'No description available' }}</p>
+                        <p>{{ car.mileage|int }} miles</p>
+                        <span class="price">${{ car.price|int }}</span>
+                    </div>
                 </div>
-                <div class="car-info">
-                    <h3>1965 Mercedes-Benz 280SL</h3>
-                    <p>Pristine condition with original leather interior</p>
-                    <p>24,500 original miles</p>
-                    <span class="price">$175,000</span>
+                {% endfor %}
+            {% else %}
+                <!-- Fallback cars if no featured cars are in the database -->
+                <div class="car-card">
+                    <div class="car-image">
+                        <img src="/api/placeholder/600/400" alt="Classic Mercedes">
+                    </div>
+                    <div class="car-info">
+                        <h3>1965 Mercedes-Benz 280SL</h3>
+                        <p>Pristine condition with original leather interior</p>
+                        <p>24,500 original miles</p>
+                        <span class="price">$175,000</span>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="car-card">
-                <div class="car-image">
-                    <img src="/api/placeholder/600/400" alt="Vintage Jaguar">
+                
+                <div class="car-card">
+                    <div class="car-image">
+                        <img src="/api/placeholder/600/400" alt="Vintage Jaguar">
+                    </div>
+                    <div class="car-info">
+                        <h3>1962 Jaguar E-Type Series I</h3>
+                        <p>Fully restored to concours standards</p>
+                        <p>Opalescent Silver Blue with navy interior</p>
+                        <span class="price">$220,000</span>
+                    </div>
                 </div>
-                <div class="car-info">
-                    <h3>1962 Jaguar E-Type Series I</h3>
-                    <p>Fully restored to concours standards</p>
-                    <p>Opalescent Silver Blue with navy interior</p>
-                    <span class="price">$220,000</span>
+                
+                <div class="car-card">
+                    <div class="car-image">
+                        <img src="/api/placeholder/600/400" alt="Classic Porsche">
+                    </div>
+                    <div class="car-info">
+                        <h3>1973 Porsche 911 Carrera RS</h3>
+                        <p>Numbers matching, exceptional provenance</p>
+                        <p>Recent engine rebuild, concours winner</p>
+                        <span class="price">$395,000</span>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="car-card">
-                <div class="car-image">
-                    <img src="/api/placeholder/600/400" alt="Classic Porsche">
-                </div>
-                <div class="car-info">
-                    <h3>1973 Porsche 911 Carrera RS</h3>
-                    <p>Numbers matching, exceptional provenance</p>
-                    <p>Recent engine rebuild, concours winner</p>
-                    <span class="price">$395,000</span>
-                </div>
-            </div>
-            
-            <div class="car-card">
-                <div class="car-image">
-                    <img src="/api/placeholder/600/400" alt="Vintage Ferrari">
-                </div>
-                <div class="car-info">
-                    <h3>1967 Ferrari 275 GTB/4</h3>
-                    <p>Rosso Corsa with tan leather interior</p>
-                    <p>Ferrari Classiche certified, matching numbers</p>
-                    <span class="price">$2,950,000</span>
-                </div>
-            </div>
-            
-            <div class="car-card">
-                <div class="car-image">
-                    <img src="/api/placeholder/600/400" alt="Classic Aston Martin">
-                </div>
-                <div class="car-info">
-                    <h3>1964 Aston Martin DB5</h3>
-                    <p>Silver Birch with black leather interior</p>
-                    <p>Complete history, three owners from new</p>
-                    <span class="price">$1,450,000</span>
-                </div>
-            </div>
+            {% endif %}
         </div>
         
         <div id="car-details" class="car-details">
@@ -128,28 +125,84 @@
             const nextBtn = document.getElementById('next');
             const carsList = document.getElementById('featured-cars-list');
             const cards = carsList.querySelectorAll('.car-card');
-            const cardWidth = cards[0].offsetWidth + 40; // card width + gap
             
-            let position = 0;
+            if (cards.length > 0) {
+                const cardWidth = cards[0].offsetWidth + 40; // card width + gap
+                
+                let position = 0;
+                
+                prevBtn.addEventListener('click', function() {
+                    if (position > 0) {
+                        position--;
+                        carsList.scrollTo({
+                            left: position * cardWidth,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+                
+                nextBtn.addEventListener('click', function() {
+                    if (position < cards.length - 1) {
+                        position++;
+                        carsList.scrollTo({
+                            left: position * cardWidth,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Add click handler for car cards to show details
+        document.addEventListener('DOMContentLoaded', function() {
+            const cars = document.querySelectorAll('.car-card');
+            const detailsContainer = document.getElementById('car-details');
             
-            prevBtn.addEventListener('click', function() {
-                if (position > 0) {
-                    position--;
-                    carsList.scrollTo({
-                        left: position * cardWidth,
-                        behavior: 'smooth'
+            cars.forEach(car => {
+                car.addEventListener('click', function() {
+                    const carInfo = this.querySelector('.car-info');
+                    const carImage = this.querySelector('.car-image img');
+                    
+                    // Extract info
+                    const title = carInfo.querySelector('h3').innerText;
+                    const description = carInfo.querySelectorAll('p');
+                    const price = carInfo.querySelector('.price').innerText;
+                    const imageSrc = carImage.src;
+                    
+                    // Create details view
+                    detailsContainer.innerHTML = `
+                        <div class="details-modal">
+                            <div class="details-content">
+                                <span class="close-btn">&times;</span>
+                                <div class="details-image">
+                                    <img src="${imageSrc}" alt="${title}">
+                                </div>
+                                <div class="details-info">
+                                    <h2>${title}</h2>
+                                    ${Array.from(description).map(p => `<p>${p.innerText}</p>`).join('')}
+                                    <div class="details-price">${price}</div>
+                                    <a href="{{ url_for('sellers') }}" class="btn details-btn">Contact Seller</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Show details
+                    detailsContainer.style.display = 'block';
+                    
+                    // Add close functionality
+                    const closeBtn = detailsContainer.querySelector('.close-btn');
+                    closeBtn.addEventListener('click', function() {
+                        detailsContainer.style.display = 'none';
                     });
-                }
-            });
-            
-            nextBtn.addEventListener('click', function() {
-                if (position < cards.length - 1) {
-                    position++;
-                    carsList.scrollTo({
-                        left: position * cardWidth,
-                        behavior: 'smooth'
+                    
+                    // Close when clicking outside
+                    window.addEventListener('click', function(e) {
+                        if (e.target === detailsContainer.querySelector('.details-modal')) {
+                            detailsContainer.style.display = 'none';
+                        }
                     });
-                }
+                });
             });
         });
     </script>
