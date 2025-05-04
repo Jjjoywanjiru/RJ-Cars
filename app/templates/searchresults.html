@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='searchresults.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='search.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Search Results - RJ Cars</title>
+    <title>RJ Cars - Search Results</title>
 </head>
 <body>
-    <!-- Hero Section (mini version) -->
-    <section class="hero-mini">
+    <!-- Hero Section -->
+    <section class="hero">
         <div class="hero-content">
             <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
-            <p>Search Results</p>
+            <p>Find Your Perfect Automotive Investment</p>
         </div>
     </section>
 
@@ -22,86 +22,89 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('homepage') }}">Home</a></li>
                 <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
-                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('search') }}" class="active">Find Your Classic</a></li>
                 <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Search Results Content -->
-    <div class="container">
-        <!-- Search Summary -->
-        <div class="search-summary">
+    <!-- Search Criteria Section -->
+    <section class="container">
+        <div class="section-title">
             <h2>Your Search Criteria</h2>
-            <p>
-                {% if search_params.brand %}Brand: <strong>{{ search_params.brand }}</strong>{% endif %}
-                {% if search_params.model %}, Model: <strong>{{ search_params.model }}</strong>{% endif %}
-                {% if search_params.year %}, Year: <strong>{{ search_params.year }}</strong>{% endif %}
-                {% if search_params.price %}, Max Price: <strong>KSh {{ "{:,}".format(search_params.price) }}</strong>{% endif %}
-                {% if search_params.mileage %}, Max Mileage: <strong>{{ "{:,}".format(search_params.mileage) }} km</strong>{% endif %}
-                {% if search_params.condition %}, Condition: <strong>{{ search_params.condition|capitalize }}</strong>{% endif %}
-                {% if search_params.location %}, Location: <strong>{{ search_params.location }}</strong>{% endif %}
-            </p>
         </div>
-
-        {% if results %}
-            <!-- Results Count -->
-            <div class="search-result-count">
-                <h2>Found {{ results|length }} Exceptional Vehicles</h2>
-            </div>
+        
+        <div class="search-criteria">
+            {% set params = [] %}
+            {% if search_params.brand %}{% set params = params + [('Brand', search_params.brand)] %}{% endif %}
+            {% if search_params.model %}{% set params = params + [('Model', search_params.model)] %}{% endif %}
+            {% if search_params.year %}{% set params = params + [('Year', search_params.year)] %}{% endif %}
+            {% if search_params.condition %}{% set params = params + [('Condition', search_params.condition)] %}{% endif %}
+            {% if search_params.min_price or search_params.max_price %}
+                {% set price_range = [] %}
+                {% if search_params.min_price %}{% set price_range = price_range + ['$' + search_params.min_price|string] %}{% endif %}
+                {% if search_params.max_price %}{% set price_range = price_range + ['$' + search_params.max_price|string] %}{% endif %}
+                {% set params = params + [('Price', price_range|join(' - '))] %}
+            {% endif %}
             
-            <!-- Results Grid -->
+            {% if params|length > 0 %}
+                {% for label, value in params %}
+                    <span>{{ label }}: <strong>{{ value }}</strong>{% if not loop.last %} , {% endif %}</span>
+                {% endfor %}
+            {% else %}
+                <span>All Available Vehicles</span>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="container results-container">
+        {% if results and results|length > 0 %}
+            <div class="results-count">
+                Found {{ results|length }} vehicle{% if results|length > 1 %}s{% endif %}
+            </div>
             <div class="results-grid">
                 {% for car in results %}
                     <div class="car-card">
                         <div class="car-image">
                             {% if car.image_url %}
                                 <img src="{{ car.image_url }}" alt="{{ car.brand }} {{ car.model }}">
-                            {% elif car.image_data %}
-                                <img src="data:image/jpeg;base64,{{ car.image_data }}" alt="{{ car.brand }} {{ car.model }}">
-                            {% elif car.image_path %}
-                                {% if car.image_path.startswith('car-images/') %}
-                                    <!-- Supabase Storage URL -->
-                                    <img src="{{ config.SUPABASE_URL }}/storage/v1/object/public/{{ car.image_path }}" alt="{{ car.brand }} {{ car.model }}">
-                                {% else %}
-                                    <!-- Legacy static file -->
-                                    <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.brand }} {{ car.model }}">
-                                {% endif %}
                             {% else %}
-                                <img src="{{ url_for('static', filename='images/default-car.jpg') }}" alt="Default car image">
+                                <div class="no-image">No Image Available</div>
                             {% endif %}
                         </div>
-                        <div class="car-info">
-                            <h3>{{ car.brand }} {{ car.model }} ({{ car.year }})</h3>
-                            <span class="car-price">KSh {{ "{:,}".format(car.price) }}</span>
-                            
-                            <div class="car-details">
-                                <p><strong>Mileage:</strong> <span>{{ "{:,}".format(car.mileage) }} km</span></p>
-                                <p><strong>Condition:</strong> <span>{{ car.condition|capitalize }}</span></p>
-                                <p><strong>Location:</strong> <span>{{ car.location }}</span></p>
-                                <p><strong>Seller:</strong> <span>{{ car.seller_name }}</span></p>
+                        <div class="car-details">
+                            <h3>{{ car.brand }} {{ car.model }}</h3>
+                            <div class="car-specs">
+                                <span class="year">{{ car.year }}</span>
+                                <span class="condition">{{ car.condition|capitalize }}</span>
+                                <span class="mileage">{{ "{:,}".format(car.mileage) }} miles</span>
                             </div>
-                            
-                            {% if car.description %}
-                                <p class="car-description">{{ car.description }}</p>
-                            {% endif %}
-                            
-                            <a href="tel:{{ car.seller_phone }}" class="contact-btn">
-                                <i class="fas fa-phone"></i> Contact Seller
-                            </a>
+                            <div class="car-price">${{ "{:,}".format(car.price) }}</div>
+                            <div class="car-location">
+                                <i class="fas fa-map-marker-alt"></i> {{ car.location }}
+                            </div>
+                            <a href="#" class="btn btn-details">View Details</a>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <!-- No Results Found -->
             <div class="no-results">
-                <h2>No Vehicles Found</h2>
-                <p>We regret to inform you that no automobiles matching your criteria are currently available in our collection. Perhaps you might consider broadening your search parameters or consulting with our specialists for assistance.</p>
-                <a href="{{ url_for('search') }}" class="btn contact-btn">Refine Your Search</a>
+                {% if search_params.filters_applied %}
+                    <h3>No Vehicles Found</h3>
+                    <p>We regret to inform you that no automobiles matching your criteria are currently available in our collection. Perhaps you might consider broadening your search parameters or consulting with our specialists for assistance.</p>
+                {% else %}
+                    <h3>No Vehicles Available</h3>
+                    <p>There are currently no vehicles in our collection. Please check back later or contact our sales team for assistance.</p>
+                {% endif %}
+                <div class="action-buttons">
+                    <a href="{{ url_for('search') }}" class="btn btn-primary">Modify Search</a>
+                    <a href="{{ url_for('all_vehicles') }}" class="btn btn-secondary">View All Vehicles</a>
+                </div>
             </div>
         {% endif %}
-    </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">

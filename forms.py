@@ -19,22 +19,27 @@ class RegistrationForm(FlaskForm):
     )
     submit = SubmitField('Continue')
     
+
 class SearchForm(FlaskForm):
-    brand = SelectField('Brand', choices=[], validators=[Optional()])
-    model = SelectField('Model', choices=[], validators=[Optional()])
-    year = SelectField('Year', choices=[], validators=[Optional()])
-    min_price = IntegerField('Min Price', validators=[Optional()])
-    max_price = IntegerField('Max Price', validators=[Optional()])
-    min_mileage = IntegerField('Min Mileage', validators=[Optional()])
-    max_mileage = IntegerField('Max Mileage', validators=[Optional()])
+    brand = SelectField('Brand', choices=[('', 'Select Brand')], validators=[Optional()])
+    model = SelectField('Model', choices=[('', 'Select Model')], validators=[Optional()])
+    year = SelectField('Year', choices=[('', 'Select Year')], validators=[Optional()])
+    min_price = IntegerField('Min Price', validators=[Optional()], default=None)
+    max_price = IntegerField('Max Price', validators=[Optional()], default=None)
+    min_mileage = IntegerField('Min Mileage', validators=[Optional()], default=None)
+    max_mileage = IntegerField('Max Mileage', validators=[Optional()], default=None)
     # Initialize with default conditions
     condition = SelectField('Condition', choices=[
         ('', 'Select Condition'),
         ('new', 'New'),
         ('used', 'Used')
     ], validators=[Optional()])
-    location = SelectField('Location', choices=[], validators=[Optional()])
+    location = SelectField('Location', choices=[('', 'Select Location')], validators=[Optional()])
     submit = SubmitField('Search')
+    
+    def validate(self):
+        # Always return True - we want to allow empty searches
+        return True
     
     
 

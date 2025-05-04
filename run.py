@@ -265,6 +265,7 @@ def check_authentication():
             flash('Please log in to access this page', 'danger')
             return redirect(url_for('unauthorized'))
 
+
 @app.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
@@ -307,37 +308,58 @@ def search():
         flash(f'Error loading search filters: {str(e)}', 'danger')
         print(f"Error loading search filters: {str(e)}")
     
-    if form.validate_on_submit():
+    # Process search request
+    if request.method == 'POST' or request.args.get('show_all'):
         try:
+            # Start with a basic query
             query = supabase.table('car_listings').select('*')
             
-            if form.brand.data:
-                query = query.eq('brand', form.brand.data)
-            if form.model.data:
-                query = query.eq('model', form.model.data)
-            if form.year.data:
-                query = query.eq('year', int(form.year.data))
-            if form.min_price.data:
-                query = query.gte('price', form.min_price.data)
-            if form.max_price.data:
-                query = query.lte('price', form.max_price.data)
-            if form.min_mileage.data:
-                query = query.gte('mileage', form.min_mileage.data)
-            if form.max_mileage.data:
-                query = query.lte('mileage', form.max_mileage.data)
-            if form.condition.data:
-                query = query.eq('condition', form.condition.data)
-            if form.location.data:
-                query = query.eq('location', form.location.data)
+            # Initialize filters_applied as False
+            filters_applied = False
             
-            results = query.execute()
+            # Build filter conditions
+            filters = {
+                'brand': form.brand.data,
+                'model': form.model.data,
+                'year': form.year.data,
+                'condition': form.condition.data,
+                'location': form.location.data
+            }
             
+            numeric_filters = {
+                'price': (form.min_price.data, form.max_price.data),
+                'mileage': (form.min_mileage.data, form.max_mileage.data)
+            }
+            
+            # Apply exact match filters
+            for field, value in filters.items():
+                if value:
+                    query = query.eq(field, value)
+                    filters_applied = True
+            
+            # Apply range filters
+            for field, (min_val, max_val) in numeric_filters.items():
+                if min_val is not None and min_val > 0:
+                    query = query.gte(field, min_val)
+                    filters_applied = True
+                if max_val is not None and max_val > 0:
+                    query = query.lte(field, max_val)
+                    filters_applied = True
+            
+            # If no filters were applied and not showing all, get all vehicles
+            if not filters_applied and not request.args.get('show_all'):
+                results = supabase.table('car_listings').select('*').execute()
+            else:
+                results = query.execute()
+            
+            # Process images for results
             for car in results.data:
                 if car.get('image_path'):
                     car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
                 elif car.get('image_data'):
                     car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
             
+            # Store results and search parameters in session
             session['search_results'] = results.data
             session['search_params'] = {
                 'brand': form.brand.data,
@@ -348,21 +370,18 @@ def search():
                 'min_mileage': form.min_mileage.data,
                 'max_mileage': form.max_mileage.data,
                 'condition': form.condition.data,
-                'location': form.location.data
+                'location': form.location.data,
+                'filters_applied': filters_applied
             }
             
             return redirect(url_for('search_results'))
             
         except Exception as e:
             flash(f'Error searching for cars: {str(e)}', 'danger')
+            print(f"Search error: {str(e)}")
             return redirect(url_for('search'))
-    elif request.method == 'POST':
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f"Error in {field}: {error}", 'danger')
     
     return render_template('search.html', form=form)
-
 
 # Add these two new route handlers to your run.py file
 
@@ -417,15 +436,31 @@ def get_locations():
 @app.route('/search-results')
 @login_required
 def search_results():
+    # Get search results and parameters from session
     results = session.get('search_results', [])
     search_params = session.get('search_params', {})
     
-    session.pop('search_results', None)
-    session.pop('search_params', None)
+    # Log for debugging
+    print(f"Retrieved {len(results)} results from session")
+    
+    # Check if we got any results
+    if len(results) == 0:
+        # If specific filters were applied but no results found
+        if search_params.get('filters_applied', False):
+            flash('No vehicles found matching your criteria. Try broadening your search.', 'info')
+        else:
+            # If no filters were applied but still no results, there might be an issue with the database
+            flash('No vehicles are currently available in our system.', 'info')
     
     return render_template('searchresults.html', 
-                         results=results,
-                         search_params=search_params)
+                          results=results,
+                          search_params=search_params)
+    
+@app.route('/all-vehicles')
+@login_required
+def all_vehicles():
+    # Redirect to search with parameter to show all
+    return redirect(url_for('search', show_all=True))
 
 @app.route('/get_models/<brand>')
 @login_required
