@@ -265,8 +265,6 @@ def check_authentication():
             flash('Please log in to access this page', 'danger')
             return redirect(url_for('unauthorized'))
 
-
-# Modified search route in run.py
 @app.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
@@ -359,17 +357,19 @@ def search():
                     results = query.execute()
             
             # Process images for results
+            processed_results = []
             for car in results.data:
                 if car.get('image_path'):
                     car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
                 elif car.get('image_data'):
                     car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+                processed_results.append(car)
             
-            # Log for debugging
-            print(f"Found {len(results.data)} results")
+            # Debug log
+            print(f"Found {len(processed_results)} results")
             
             # Store results and search parameters in session
-            session['search_results'] = results.data
+            session['search_results'] = processed_results
             session['search_params'] = {
                 'brand': form.brand.data,
                 'model': form.model.data,
@@ -392,6 +392,60 @@ def search():
     
     return render_template('search.html', form=form)
 
+@app.route('/all-vehicles')
+@login_required
+def all_vehicles():
+    # Get all vehicles and set them in the session
+    try:
+        print("Loading all vehicles...")
+        results = supabase.table('car_listings').select('*').execute()
+        
+        # Process images for results
+        processed_results = []
+        for car in results.data:
+            if car.get('image_path'):
+                car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
+            elif car.get('image_data'):
+                car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+            processed_results.append(car)
+        
+        print(f"All vehicles loaded: {len(processed_results)} vehicles found")
+        
+        # Store results and search parameters in session
+        session['search_results'] = processed_results
+        session['search_params'] = {
+            'filters_applied': False
+        }
+        
+        return redirect(url_for('search_results'))
+    except Exception as e:
+        flash(f'Error loading vehicles: {str(e)}', 'danger')
+        print(f"Error in all_vehicles: {str(e)}")
+        return redirect(url_for('search'))
+
+@app.route('/search-results')
+@login_required
+def search_results():
+    # Get search results and parameters from session
+    results = session.get('search_results', [])
+    search_params = session.get('search_params', {})
+    
+    # Log for debugging
+    print(f"Retrieved {len(results)} results from session")
+    
+    # Check if we got any results
+    if results is None or len(results) == 0:
+        # If specific filters were applied but no results found
+        if search_params.get('filters_applied', False):
+            flash('No vehicles found matching your criteria. Try broadening your search.', 'info')
+        else:
+            # If no filters were applied but still no results, there might be an issue with the database
+            flash('No vehicles are currently available in our system.', 'info')
+    
+    return render_template('searchresults.html', 
+                          results=results,
+                          search_params=search_params)
+
 @app.route('/clear-search', methods=['POST'])
 @login_required
 def clear_search():
@@ -400,30 +454,7 @@ def clear_search():
     session.pop('search_params', None)
     return jsonify({'status': 'success'})
 
-@app.route('/all-vehicles')
-@login_required
-def all_vehicles():
-    # Get all vehicles and set them in the session
-    try:
-        results = supabase.table('car_listings').select('*').execute()
-        
-        # Process images for results
-        for car in results.data:
-            if car.get('image_path'):
-                car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
-            elif car.get('image_data'):
-                car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
-        
-        # Store results and search parameters in session
-        session['search_results'] = results.data
-        session['search_params'] = {
-            'filters_applied': False
-        }
-        
-        return redirect(url_for('search_results'))
-    except Exception as e:
-        flash(f'Error loading vehicles: {str(e)}', 'danger')
-        return redirect(url_for('search'))
+
 
 # Add these two new route handlers to your run.py file
 
@@ -475,29 +506,6 @@ def get_locations():
         print(f"Error fetching locations: {str(e)}")
         return jsonify({'locations': []})
 
-@app.route('/search-results')
-@login_required
-def search_results():
-    # Get search results and parameters from session
-    results = session.get('search_results', [])
-    search_params = session.get('search_params', {})
-    
-    # Log for debugging
-    print(f"Retrieved {len(results)} results from session")
-    
-    # Check if we got any results
-    if len(results) == 0:
-        # If specific filters were applied but no results found
-        if search_params.get('filters_applied', False):
-            flash('No vehicles found matching your criteria. Try broadening your search.', 'info')
-        else:
-            # If no filters were applied but still no results, there might be an issue with the database
-            flash('No vehicles are currently available in our system.', 'info')
-    
-    return render_template('searchresults.html', 
-                          results=results,
-                          search_params=search_params)
-    
 
 
 @app.route('/get_models/<brand>')

@@ -142,36 +142,11 @@
                     location: $('#location').val()
                 });
             });
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            // When brand changes, load models
-            $('#brand').change(function() {
-                // Your existing brand change handler...
-            });
             
-            // When model changes, load years and locations
-            $('#model').change(function() {
-                // Your existing model change handler...
-            });
-        
-            // Initialize form with any previously selected values
-            {% if form.brand.data %}
-                // Your existing initialization code...
-            {% endif %}
-            
-            // Add log before form submission to check values
-            $('form').submit(function() {
-                console.log("Submitting form with values:", {
-                    model: $('#model').val(),
-                    year: $('#year').val(),
-                    location: $('#location').val()
-                });
-            });
-            
-            // ===== NEW CLEAR FILTERS CODE =====
-            $('#clear-filters').click(function() {
+            // ===== CLEAR FILTERS CODE =====
+            $('#clear-filters').click(function(e) {
+                e.preventDefault(); // Prevent default button behavior
+                
                 // Clear all form fields
                 $('form').trigger('reset');
                 
@@ -185,18 +160,8 @@
                 // Clear numeric inputs
                 $('input[type="number"]').val('');
                 
-                // Submit the form to show all vehicles
-                $.ajax({
-                    url: '{{ url_for("clear_search") }}',
-                    type: 'POST',
-                    success: function() {
-                        window.location.href = '{{ url_for("search") }}?show_all=1';
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error clearing search:', error);
-                        window.location.href = '{{ url_for("search") }}?show_all=1';
-                    }
-                });
+                // Navigate to the all vehicles page
+                window.location.href = '{{ url_for("all_vehicles") }}';
             });
     
             // Reset form when page loads if coming from search results
@@ -328,10 +293,7 @@
             
                 <div class="form-row submit-row">
                     {{ form.submit(class="btn") }}
-                </div>
-                <div class="form-row submit-row">
-                    {{ form.submit(class="btn") }}
-                    <button type="button" id="clear-filters" class="btn btn-secondary">Clear Filters</button>
+                    <button type="button" id="clear-filters" class="btn btn-secondary">View All Vehicles</button>
                 </div>
             </form>
         </div>
