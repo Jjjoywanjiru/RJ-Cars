@@ -266,6 +266,7 @@ def check_authentication():
             return redirect(url_for('unauthorized'))
 
 
+# Modified search route in run.py
 @app.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
@@ -311,46 +312,51 @@ def search():
     # Process search request
     if request.method == 'POST' or request.args.get('show_all'):
         try:
-            # Start with a basic query
-            query = supabase.table('car_listings').select('*')
-            
-            # Initialize filters_applied as False
-            filters_applied = False
-            
-            # Build filter conditions
-            filters = {
-                'brand': form.brand.data,
-                'model': form.model.data,
-                'year': form.year.data,
-                'condition': form.condition.data,
-                'location': form.location.data
-            }
-            
-            numeric_filters = {
-                'price': (form.min_price.data, form.max_price.data),
-                'mileage': (form.min_mileage.data, form.max_mileage.data)
-            }
-            
-            # Apply exact match filters
-            for field, value in filters.items():
-                if value:
-                    query = query.eq(field, value)
-                    filters_applied = True
-            
-            # Apply range filters
-            for field, (min_val, max_val) in numeric_filters.items():
-                if min_val is not None and min_val > 0:
-                    query = query.gte(field, min_val)
-                    filters_applied = True
-                if max_val is not None and max_val > 0:
-                    query = query.lte(field, max_val)
-                    filters_applied = True
-            
-            # If no filters were applied (empty search), get all vehicles
-            if not filters_applied:
+            # Special case for "show_all" - bypass all filters
+            if request.args.get('show_all'):
                 results = supabase.table('car_listings').select('*').execute()
+                filters_applied = False
             else:
-                results = query.execute()
+                # Start with a basic query
+                query = supabase.table('car_listings').select('*')
+                
+                # Initialize filters_applied as False
+                filters_applied = False
+                
+                # Build filter conditions
+                filters = {
+                    'brand': form.brand.data,
+                    'model': form.model.data,
+                    'year': form.year.data,
+                    'condition': form.condition.data,
+                    'location': form.location.data
+                }
+                
+                numeric_filters = {
+                    'price': (form.min_price.data, form.max_price.data),
+                    'mileage': (form.min_mileage.data, form.max_mileage.data)
+                }
+                
+                # Apply exact match filters
+                for field, value in filters.items():
+                    if value:
+                        query = query.eq(field, value)
+                        filters_applied = True
+                
+                # Apply range filters
+                for field, (min_val, max_val) in numeric_filters.items():
+                    if min_val is not None and min_val > 0:
+                        query = query.gte(field, min_val)
+                        filters_applied = True
+                    if max_val is not None and max_val > 0:
+                        query = query.lte(field, max_val)
+                        filters_applied = True
+                
+                # If no filters were applied (empty search), get all vehicles
+                if not filters_applied:
+                    results = supabase.table('car_listings').select('*').execute()
+                else:
+                    results = query.execute()
             
             # Process images for results
             for car in results.data:
@@ -358,6 +364,9 @@ def search():
                     car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
                 elif car.get('image_data'):
                     car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+            
+            # Log for debugging
+            print(f"Found {len(results.data)} results")
             
             # Store results and search parameters in session
             session['search_results'] = results.data
@@ -389,7 +398,32 @@ def clear_search():
     # Clear any search-related session data
     session.pop('search_results', None)
     session.pop('search_params', None)
-    return redirect(url_for('search'))
+    return jsonify({'status': 'success'})
+
+@app.route('/all-vehicles')
+@login_required
+def all_vehicles():
+    # Get all vehicles and set them in the session
+    try:
+        results = supabase.table('car_listings').select('*').execute()
+        
+        # Process images for results
+        for car in results.data:
+            if car.get('image_path'):
+                car['image_url'] = f"{app.config['SUPABASE_URL']}/storage/v1/object/public/{car['image_path']}"
+            elif car.get('image_data'):
+                car['image_url'] = f"data:image/jpeg;base64,{car['image_data']}"
+        
+        # Store results and search parameters in session
+        session['search_results'] = results.data
+        session['search_params'] = {
+            'filters_applied': False
+        }
+        
+        return redirect(url_for('search_results'))
+    except Exception as e:
+        flash(f'Error loading vehicles: {str(e)}', 'danger')
+        return redirect(url_for('search'))
 
 # Add these two new route handlers to your run.py file
 
@@ -464,11 +498,7 @@ def search_results():
                           results=results,
                           search_params=search_params)
     
-@app.route('/all-vehicles')
-@login_required
-def all_vehicles():
-    # Redirect to search with parameter to show all
-    return redirect(url_for('search', show_all=True))
+
 
 @app.route('/get_models/<brand>')
 @login_required
