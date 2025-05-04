@@ -308,53 +308,45 @@ def search():
         print(f"Error loading search filters: {str(e)}")
     
     # Process search request
-    if request.method == 'POST' or request.args.get('show_all'):
+    if request.method == 'POST':
         try:
-            # Special case for "show_all" - bypass all filters
-            if request.args.get('show_all'):
-                results = supabase.table('car_listings').select('*').execute()
-                filters_applied = False
-            else:
-                # Start with a basic query
-                query = supabase.table('car_listings').select('*')
-                
-                # Initialize filters_applied as False
-                filters_applied = False
-                
-                # Build filter conditions
-                filters = {
-                    'brand': form.brand.data,
-                    'model': form.model.data,
-                    'year': form.year.data,
-                    'condition': form.condition.data,
-                    'location': form.location.data
-                }
-                
-                numeric_filters = {
-                    'price': (form.min_price.data, form.max_price.data),
-                    'mileage': (form.min_mileage.data, form.max_mileage.data)
-                }
-                
-                # Apply exact match filters
-                for field, value in filters.items():
-                    if value:
-                        query = query.eq(field, value)
-                        filters_applied = True
-                
-                # Apply range filters
-                for field, (min_val, max_val) in numeric_filters.items():
-                    if min_val is not None and min_val > 0:
-                        query = query.gte(field, min_val)
-                        filters_applied = True
-                    if max_val is not None and max_val > 0:
-                        query = query.lte(field, max_val)
-                        filters_applied = True
-                
-                # If no filters were applied (empty search), get all vehicles
-                if not filters_applied:
-                    results = supabase.table('car_listings').select('*').execute()
-                else:
-                    results = query.execute()
+            # Start with a basic query
+            query = supabase.table('car_listings').select('*')
+            
+            # Initialize filters_applied as False
+            filters_applied = False
+            
+            # Build filter conditions
+            filters = {
+                'brand': form.brand.data,
+                'model': form.model.data,
+                'year': form.year.data,
+                'condition': form.condition.data,
+                'location': form.location.data
+            }
+            
+            numeric_filters = {
+                'price': (form.min_price.data, form.max_price.data),
+                'mileage': (form.min_mileage.data, form.max_mileage.data)
+            }
+            
+            # Apply exact match filters
+            for field, value in filters.items():
+                if value:
+                    query = query.eq(field, value)
+                    filters_applied = True
+            
+            # Apply range filters
+            for field, (min_val, max_val) in numeric_filters.items():
+                if min_val is not None and min_val > 0:
+                    query = query.gte(field, min_val)
+                    filters_applied = True
+                if max_val is not None and max_val > 0:
+                    query = query.lte(field, max_val)
+                    filters_applied = True
+            
+            # Execute the query
+            results = query.execute()
             
             # Process images for results
             processed_results = []
@@ -390,11 +382,20 @@ def search():
             print(f"Search error: {str(e)}")
             return redirect(url_for('search'))
     
+    # If this is a GET request with show_all parameter, make sure we reset any session data
+    if request.method == 'GET' and request.args.get('show_all'):
+        session.pop('search_results', None)
+        session.pop('search_params', None)
+    
     return render_template('search.html', form=form)
 
 @app.route('/all-vehicles')
 @login_required
 def all_vehicles():
+    # Clear any previous search results from session
+    session.pop('search_results', None)
+    session.pop('search_params', None)
+    
     # Get all vehicles and set them in the session
     try:
         print("Loading all vehicles...")
@@ -422,6 +423,7 @@ def all_vehicles():
         flash(f'Error loading vehicles: {str(e)}', 'danger')
         print(f"Error in all_vehicles: {str(e)}")
         return redirect(url_for('search'))
+
 
 @app.route('/search-results')
 @login_required

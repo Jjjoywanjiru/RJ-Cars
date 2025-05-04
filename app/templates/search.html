@@ -134,8 +134,20 @@
                 }, 500);
             {% endif %}
             
-            // Add log before form submission to check values
+            // Modified form submission handler
             $('form').submit(function(e) {
+                // First clear any previous search data from session
+                $.ajax({
+                    url: '/clear-search',
+                    type: 'POST',
+                    success: function() {
+                        console.log("Search data cleared from session");
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error clearing search data:", error);
+                    }
+                });
+                
                 // Check if no filters are selected
                 var noFiltersSelected = true;
                 
@@ -164,43 +176,67 @@
                 }
                 
                 console.log("Submitting form with values:", {
+                    brand: $('#brand').val(),
                     model: $('#model').val(),
                     year: $('#year').val(),
                     location: $('#location').val()
                 });
             });
             
-            // ===== CLEAR FILTERS CODE =====
+            // Improved clear filters button functionality
             $('#clear-filters').click(function(e) {
                 e.preventDefault(); // Prevent default button behavior
                 
-                // Clear all form fields
-                $('form').trigger('reset');
-                
-                // Reset dropdowns to their initial state
-                $('#brand').val('').trigger('change');
-                $('#model').empty().append('<option value="">Select Model</option>');
-                $('#year').empty().append('<option value="">Select Year</option>');
-                $('#location').empty().append('<option value="">Select Location</option>');
-                $('#condition').val('');
-                
-                // Clear numeric inputs
-                $('input[type="number"]').val('');
-                
-                // Navigate to the all vehicles page
-                window.location.href = '{{ url_for("all_vehicles") }}';
+                // First clear any previous search data from session
+                $.ajax({
+                    url: '/clear-search',
+                    type: 'POST',
+                    success: function() {
+                        console.log("Search data cleared from session");
+                        
+                        // Reset form fields after session is cleared
+                        $('form').trigger('reset');
+                        
+                        // Reset dropdowns to their initial state
+                        $('#brand').val('').trigger('change');
+                        $('#model').empty().append('<option value="">Select Model</option>');
+                        $('#year').empty().append('<option value="">Select Year</option>');
+                        $('#location').empty().append('<option value="">Select Location</option>');
+                        $('#condition').val('');
+                        
+                        // Clear numeric inputs
+                        $('input[type="number"]').val('');
+                        
+                        // Navigate to the all vehicles page
+                        window.location.href = '{{ url_for("all_vehicles") }}';
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error clearing search data:", error);
+                        alert("There was an error clearing your search. Please try again.");
+                    }
+                });
             });
         
             // Reset form when page loads if coming from search results
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('show_all')) {
-                $('form').trigger('reset');
-                $('#brand').val('').trigger('change');
-                $('#model').empty().append('<option value="">Select Model</option>');
-                $('#year').empty().append('<option value="">Select Year</option>');
-                $('#location').empty().append('<option value="">Select Location</option>');
-                $('#condition').val('');
-                $('input[type="number"]').val('');
+                // Clear any previous search data from session
+                $.ajax({
+                    url: '/clear-search',
+                    type: 'POST',
+                    success: function() {
+                        console.log("Search data cleared from session on page load");
+                        
+                        // Reset form fields
+                        $('form').trigger('reset');
+                        $('#brand').val('').trigger('change');
+                        $('#model').empty().append('<option value="">Select Model</option>');
+                        $('#year').empty().append('<option value="">Select Year</option>');
+                        $('#location').empty().append('<option value="">Select Location</option>');
+                        $('#condition').val('');
+                        $('input[type="number"]').val('');
+                    }
+                });
             }
         });
     </script>
