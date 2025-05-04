@@ -346,8 +346,8 @@ def search():
                     query = query.lte(field, max_val)
                     filters_applied = True
             
-            # If no filters were applied and not showing all, get all vehicles
-            if not filters_applied and not request.args.get('show_all'):
+            # If no filters were applied (empty search), get all vehicles
+            if not filters_applied:
                 results = supabase.table('car_listings').select('*').execute()
             else:
                 results = query.execute()
@@ -382,6 +382,14 @@ def search():
             return redirect(url_for('search'))
     
     return render_template('search.html', form=form)
+
+@app.route('/clear-search', methods=['POST'])
+@login_required
+def clear_search():
+    # Clear any search-related session data
+    session.pop('search_results', None)
+    session.pop('search_params', None)
+    return redirect(url_for('search'))
 
 # Add these two new route handlers to your run.py file
 
