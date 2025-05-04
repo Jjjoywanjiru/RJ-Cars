@@ -153,58 +153,7 @@
             }
         });
         
-        // Add click handler for car cards to show details
-        document.addEventListener('DOMContentLoaded', function() {
-            const cars = document.querySelectorAll('.car-card');
-            const detailsContainer = document.getElementById('car-details');
-            
-            cars.forEach(car => {
-                car.addEventListener('click', function() {
-                    const carInfo = this.querySelector('.car-info');
-                    const carImage = this.querySelector('.car-image img');
-                    
-                    // Extract info
-                    const title = carInfo.querySelector('h3').innerText;
-                    const description = carInfo.querySelectorAll('p');
-                    const price = carInfo.querySelector('.price').innerText;
-                    const imageSrc = carImage.src;
-                    
-                    // Create details view
-                    detailsContainer.innerHTML = `
-                        <div class="details-modal">
-                            <div class="details-content">
-                                <span class="close-btn">&times;</span>
-                                <div class="details-image">
-                                    <img src="${imageSrc}" alt="${title}">
-                                </div>
-                                <div class="details-info">
-                                    <h2>${title}</h2>
-                                    ${Array.from(description).map(p => `<p>${p.innerText}</p>`).join('')}
-                                    <div class="details-price">${price}</div>
-                                    <a href="{{ url_for('sellers') }}" class="btn details-btn">Contact Seller</a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Show details
-                    detailsContainer.style.display = 'block';
-                    
-                    // Add close functionality
-                    const closeBtn = detailsContainer.querySelector('.close-btn');
-                    closeBtn.addEventListener('click', function() {
-                        detailsContainer.style.display = 'none';
-                    });
-                    
-                    // Close when clicking outside
-                    window.addEventListener('click', function(e) {
-                        if (e.target === detailsContainer.querySelector('.details-modal')) {
-                            detailsContainer.style.display = 'none';
-                        }
-                    });
-                });
-            });
-        });
+        // The click event handler for car cards has been removed
     </script>
 </body>
 </html>

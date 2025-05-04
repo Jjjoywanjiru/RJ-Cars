@@ -398,3 +398,19 @@ h3 {
     gap: 10px;
   }
 }
+
+.car-card {
+  /* Remove any hover effects or cursor changes */
+  cursor: default;
+}
+
+.car-card:hover {
+  /* Remove any hover state styles that might suggest clickability */
+  transform: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Keep the default shadow without enhancement */
+}
+
+/* Hide the car-details section since we're not using it */
+#car-details {
+  display: none;
+}
