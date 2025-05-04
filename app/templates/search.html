@@ -119,7 +119,7 @@
                     });
                 }
             });
-    
+        
             // Initialize form with any previously selected values
             {% if form.brand.data %}
                 $('#brand').trigger('change');
@@ -135,7 +135,34 @@
             {% endif %}
             
             // Add log before form submission to check values
-            $('form').submit(function() {
+            $('form').submit(function(e) {
+                // Check if no filters are selected
+                var noFiltersSelected = true;
+                
+                // Check dropdown filters
+                if ($('#brand').val() ||
+                    $('#model').val() ||
+                    $('#year').val() ||
+                    $('#condition').val() ||
+                    $('#location').val()) {
+                    noFiltersSelected = false;
+                }
+                
+                // Check numeric inputs
+                if ($('#min_price').val() ||
+                    $('#max_price').val() ||
+                    $('#min_mileage').val() ||
+                    $('#max_mileage').val()) {
+                    noFiltersSelected = false;
+                }
+                
+                // If no filters are selected, redirect to all vehicles
+                if (noFiltersSelected) {
+                    e.preventDefault(); // Prevent the default form submission
+                    window.location.href = '{{ url_for("all_vehicles") }}';
+                    return false;
+                }
+                
                 console.log("Submitting form with values:", {
                     model: $('#model').val(),
                     year: $('#year').val(),
@@ -163,7 +190,7 @@
                 // Navigate to the all vehicles page
                 window.location.href = '{{ url_for("all_vehicles") }}';
             });
-    
+        
             // Reset form when page loads if coming from search results
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('show_all')) {
