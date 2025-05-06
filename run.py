@@ -252,7 +252,8 @@ def logout():
 @app.before_request
 def check_authentication():
     # List of routes that don't require authentication
-    public_routes = ['static', 'login', 'register', 'signup', 'logout', 'home', 'unauthorized']
+    public_routes = ['static', 'login', 'register', 'signup', 'logout', 'home', 'unauthorized', 
+                    'forgot_password', 'reset_password', 'password_reset_success']
     
     # Check if the route requires authentication
     if request.endpoint and request.endpoint not in public_routes:
@@ -616,9 +617,12 @@ def forgot_password():
         
         try:
             # Send password reset email through Supabase
-            supabase.auth.reset_password_for_email(email, {
-                "redirect_to": f"{app.config['SITE_URL']}/reset-password"
-            })
+            reset_response = supabase.auth.reset_password_for_email(
+                email, 
+                {
+                    "redirect_to": f"{app.config['SITE_URL']}/reset-password"
+                }
+            )
             
             flash('Password reset link has been sent to your email address. Please check your inbox.', 'success')
             return redirect(url_for('login'))
@@ -632,9 +636,8 @@ def forgot_password():
     
     return render_template('forgot-password.html')
 
-@app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
-    # For the GET request, check if there's a token in the URL (from email link)
+    # For the GET request, capture the token from the URL
     token = request.args.get('token', '')
     
     if request.method == 'POST':
@@ -652,10 +655,11 @@ def reset_password():
             return render_template('reset-password.html', token=token)
         
         try:
-            # Update the user's password in Supabase
+            # Use the proper recovery flow with the token
+            # Note: In Supabase's gotrue client, this is the correct method for password recovery
             supabase.auth.verify_otp({
-                "type": "recovery", 
-                "token": token, 
+                "token": token,
+                "type": "recovery",
                 "new_password": password
             })
             
@@ -666,10 +670,10 @@ def reset_password():
             error_message = str(e)
             print(f"Password update error: {error_message}")
             
-            if "Token has expired or is invalid" in error_message:
+            if "token is invalid or expired" in error_message.lower():
                 flash('The password reset link has expired. Please request a new one.', 'danger')
             else:
-                flash('An error occurred while resetting your password. Please try again.', 'danger')
+                flash(f'An error occurred while resetting your password: {error_message}. Please try again.', 'danger')
                 
             return redirect(url_for('forgot_password'))
     
