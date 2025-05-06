@@ -636,12 +636,18 @@ def forgot_password():
     
     return render_template('forgot-password.html')
 
+@app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
-    # For the GET request, capture the token from the URL
+    # Get the access token from URL parameters or form data
     token = request.args.get('token', '')
     
+    # Check for URL hash fragment in a hidden form field
+    if not token and request.method == 'POST':
+        token = request.form.get('token', '')
+    
+    # Process form submission
     if request.method == 'POST':
-        token = request.form.get('token')
+        email = request.form.get('email', '')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -655,12 +661,10 @@ def reset_password():
             return render_template('reset-password.html', token=token)
         
         try:
-            # Use the proper recovery flow with the token
-            # Note: In Supabase's gotrue client, this is the correct method for password recovery
-            supabase.auth.verify_otp({
-                "token": token,
-                "type": "recovery",
-                "new_password": password
+            # Update the user's password
+            # This is for the new Supabase JS client >= v2 API pattern
+            response = supabase.auth.update_user({
+                "password": password
             })
             
             flash('Your password has been reset successfully!', 'success')
@@ -670,14 +674,13 @@ def reset_password():
             error_message = str(e)
             print(f"Password update error: {error_message}")
             
-            if "token is invalid or expired" in error_message.lower():
+            if "token is invalid or expired" in error_message.lower() or "JWT" in error_message:
                 flash('The password reset link has expired. Please request a new one.', 'danger')
             else:
-                flash(f'An error occurred while resetting your password: {error_message}. Please try again.', 'danger')
+                flash('An error occurred while resetting your password. Please try again.', 'danger')
                 
             return redirect(url_for('forgot_password'))
     
-    # For GET request, just show the form with the token
     return render_template('reset-password.html', token=token)
 
 @app.route('/password-reset-success')
