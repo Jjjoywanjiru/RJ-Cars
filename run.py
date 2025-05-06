@@ -604,6 +604,82 @@ def sellers():
     
     return render_template('sellers.html', form=form)
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        
+        # Input validation
+        if not email:
+            flash('Please provide your email address', 'danger')
+            return render_template('forgot-password.html')
+        
+        try:
+            # Send password reset email through Supabase
+            supabase.auth.reset_password_for_email(email, {
+                "redirect_to": f"{app.config['SITE_URL']}/reset-password"
+            })
+            
+            flash('Password reset link has been sent to your email address. Please check your inbox.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            error_message = str(e)
+            print(f"Password reset error: {error_message}")
+            # Don't reveal if the email exists for security reasons
+            flash('If your email is registered, you will receive a password reset link shortly.', 'info')
+            return redirect(url_for('login'))
+    
+    return render_template('forgot-password.html')
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    # For the GET request, check if there's a token in the URL (from email link)
+    token = request.args.get('token', '')
+    
+    if request.method == 'POST':
+        token = request.form.get('token')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Input validation
+        if not password or not confirm_password:
+            flash('Please provide both password fields', 'danger')
+            return render_template('reset-password.html', token=token)
+            
+        if password != confirm_password:
+            flash('Passwords do not match', 'danger')
+            return render_template('reset-password.html', token=token)
+        
+        try:
+            # Update the user's password in Supabase
+            supabase.auth.verify_otp({
+                "type": "recovery", 
+                "token": token, 
+                "new_password": password
+            })
+            
+            flash('Your password has been reset successfully!', 'success')
+            return redirect(url_for('password_reset_success'))
+            
+        except Exception as e:
+            error_message = str(e)
+            print(f"Password update error: {error_message}")
+            
+            if "Token has expired or is invalid" in error_message:
+                flash('The password reset link has expired. Please request a new one.', 'danger')
+            else:
+                flash('An error occurred while resetting your password. Please try again.', 'danger')
+                
+            return redirect(url_for('forgot_password'))
+    
+    # For GET request, just show the form with the token
+    return render_template('reset-password.html', token=token)
+
+@app.route('/password-reset-success')
+def password_reset_success():
+    return render_template('password-reset-success.html')
+
 if __name__ == '__main__':
     print("Starting Flask application...")
     app.run(debug=True)
