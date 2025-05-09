@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='payment.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <title>RJ Cars - Payment</title>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
+            <p>Complete Your Premium Listing</p>
+        </div>
+    </section>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Payment Section -->
+    <section class="container">
+        <div class="section-title">
+            <h2>Premium Listing Payment</h2>
+        </div>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-intro">
+            <p>Complete your payment to finalize your premium listing placement.</p>
+        </div>
+
+        <div class="payment-summary">
+            <h3>Order Summary</h3>
+            <div class="order-details">
+                <div class="order-row">
+                    <span>Vehicle:</span>
+                    <span>{{ listing_data.year }} {{ listing_data.brand }} {{ listing_data.model }}</span>
+                </div>
+                <div class="order-row">
+                    <span>Promotional Package:</span>
+                    <span>{{ listing_data.promotion_display }}</span>
+                </div>
+                <div class="order-row total">
+                    <span>Total:</span>
+                    <span>${{ listing_data.promotion_price }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-form">
+            <form id="payment-form">
+                <input type="hidden" id="listing_id" name="listing_id" value="{{ listing_data.id }}">
+                <input type="hidden" id="promotion_type" name="promotion_type" value="{{ listing_data.promotion }}">
+                <input type="hidden" id="payment_amount" name="payment_amount" value="{{ listing_data.promotion_price }}">
+                
+                <h3>Payment Information</h3>
+                
+                <div class="form-section">
+                    <div class="cardholder-name">
+                        <label for="cardholder-name">Cardholder Name</label>
+                        <input id="cardholder-name" name="cardholder-name" type="text" placeholder="Cardholder Name" required>
+                    </div>
+                    
+                    <div class="card-element-container">
+                        <label for="card-element">Credit or Debit Card</label>
+                        <div id="card-element"></div>
+                        <div id="card-errors" class="error-message" role="alert"></div>
+                    </div>
+                </div>
+                
+                <div class="checkout-actions">
+                    <a href="{{ url_for('sellers') }}" class="cancel-btn">Cancel</a>
+                    <button id="submit-payment" type="submit">
+                        <div class="spinner hidden" id="spinner"></div>
+                        <span id="button-text">Pay ${{ listing_data.promotion_price }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
+
+    <script>
+        // Initialize Stripe
+        const stripe = Stripe('{{ stripe_public_key }}');
+        const elements = stripe.elements();
+        
+        // Create card Element and mount it
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    iconColor: '#444',
+                    color: '#31325F',
+                    fontWeight: '400',
+                    fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                    fontSize: '16px',
+                    '::placeholder': {
+                        color: '#AAA'
+                    }
+                }
+            }
+        });
+        cardElement.mount('#card-element');
+        
+        // Handle form submission
+        const form = document.getElementById('payment-form');
+        const cardButton = document.getElementById('submit-payment');
+        const cardButtonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+        
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            // Disable the submit button to prevent repeated clicks
+            cardButton.disabled = true;
+            spinner.classList.remove('hidden');
+            cardButtonText.classList.add('hidden');
+            
+            const cardholderName = document.getElementById('cardholder-name').value;
+            const listingId = document.getElementById('listing_id').value;
+            const promotionType = document.getElementById('promotion_type').value;
+            
+            try {
+                // Create payment intent on the server
+                const createIntentResponse = await fetch('/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        listing_id: listingId,
+                        promotion_type: promotionType
+                    }),
+                });
+                
+                if (!createIntentResponse.ok) {
+                    throw new Error('Error creating payment intent');
+                }
+                
+                const intentData = await createIntentResponse.json();
+                const clientSecret = intentData.clientSecret;
+                
+                // Confirm card payment
+                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement,
+                        billing_details: {
+                            name: cardholderName
+                        }
+                    }
+                });
+                
+                if (error) {
+                    // Show error to customer
+                    const errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = error.message;
+                    
+                    // Re-enable the submit button
+                    cardButton.disabled = false;
+                    spinner.classList.add('hidden');
+                    cardButtonText.classList.remove('hidden');
+                } else {
+                    // Payment succeeded
+                    // Redirect to completion page with listing detail
+                    window.location.href = `/payment-success?listing_id=${listingId}`;
+                }
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                
+                const errorElement = document.getElementById('card-errors');
+                errorElement.textContent = 'An unexpected error occurred. Please try again.';
+                
+                // Re-enable the submit button
+                cardButton.disabled = false;
+                spinner.classList.add('hidden');
+                cardButtonText.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
