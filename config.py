@@ -28,6 +28,13 @@ class Config:
     # Supabase Storage Bucket for car images
     SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', 'car-images')
     
+    # M-Pesa API Configuration
+    MPESA_CONSUMER_KEY = os.environ.get('MPESA_CONSUMER_KEY')
+    MPESA_CONSUMER_SECRET = os.environ.get('MPESA_CONSUMER_SECRET')
+    MPESA_BUSINESS_SHORTCODE = os.environ.get('MPESA_BUSINESS_SHORTCODE', '174379')  # Default is sandbox value
+    MPESA_PASSKEY = os.environ.get('MPESA_PASSKEY')
+    MPESA_CALLBACK_URL = os.environ.get('MPESA_CALLBACK_URL')
+    
     SITE_URL = os.environ.get('SITE_URL', 'http://localhost:5000')  # Default for local testing
     
     # Other config settings...
