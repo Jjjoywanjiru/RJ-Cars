@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='all-vehicles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>RJ Cars - Complete Collection</title>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1><span class="logo">RJ <span class="logo-accent">Cars</span></span></h1>
+            <p>Our Complete Collection of Exceptional Automobiles</p>
+        </div>
+    </section>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                <li><a href="{{ url_for('featuredCars') }}">Our Collection</a></li>
+                <li><a href="{{ url_for('search') }}">Find Your Classic</a></li>
+                <li><a href="{{ url_for('sellers') }}">Authorized Sellers</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- All Vehicles Section -->
+    <section class="container">
+        <div class="section-title">
+            <h2>Complete Collection</h2>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <div class="filter-container">
+                <div class="sort-options">
+                    <label for="sort-select">Sort by:</label>
+                    <select id="sort-select" class="sort-select">
+                        <option value="price-asc">Price (Low to High)</option>
+                        <option value="price-desc">Price (High to Low)</option>
+                        <option value="year-new">Year (Newest First)</option>
+                        <option value="year-old">Year (Oldest First)</option>
+                        <option value="brand">Brand (A-Z)</option>
+                    </select>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn grid-view active"><i class="fas fa-th"></i></button>
+                    <button class="view-btn list-view"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+            <a href="{{ url_for('search') }}" class="refine-search-btn">Refine Search</a>
+        </div>
+
+        <!-- Vehicles Display -->
+        <div class="vehicles-display grid-layout">
+            {% if not results %}
+                <div class="no-results">
+                    <h3>No vehicles currently available</h3>
+                    <p>Please check back later or contact our concierge team for bespoke acquisition services.</p>
+                </div>
+            {% else %}
+                {% for car in results %}
+                <div class="car-card">
+                    <div class="car-image">
+                        {% if car.image_url %}
+                            <img src="{{ car.image_url }}" alt="{{ car.year }} {{ car.brand }} {{ car.model }}">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/car-placeholder.jpg') }}" alt="Vehicle image">
+                        {% endif %}
+                    </div>
+                    <div class="car-info">
+                        <h3>{{ car.year }} {{ car.brand }} {{ car.model }}</h3>
+                        <p class="car-location"><i class="fas fa-map-marker-alt"></i> {{ car.location }}</p>
+                        <p class="car-details">
+                            <span class="mileage"><i class="fas fa-tachometer-alt"></i> {{ car.mileage }} miles</span>
+                            <span class="condition"><i class="fas fa-car"></i> {{ car.condition }}</span>
+                        </p>
+                        <p class="car-description">{{ car.description[:100] }}{% if car.description|length > 100 %}...{% endif %}</p>
+                        <span class="price">${{ "{:,.0f}".format(car.price) }}</span>
+                        <div class="car-actions">
+                            <a href="#" class="btn btn-inquire">Inquire</a>
+                            <button class="btn-favorite"><i class="far fa-heart"></i></button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        {% if results and results|length > 12 %}
+        <div class="pagination">
+            <button class="page-btn prev-page" disabled><i class="fas fa-chevron-left"></i></button>
+            <span class="page-numbers">
+                <span class="current-page">1</span> of 
+                <span class="total-pages">{{ (results|length / 12)|round(0, 'ceil')|int }}</span>
+            </span>
+            <button class="page-btn next-page"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Can't Find What You're Looking For?</h2>
+            <p>Our acquisition specialists excel at sourcing rare and exclusive automobiles. Let us know what you're searching for, and we'll make it happen.</p>
+            <a href="#" class="btn">Contact Our Concierge</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span class="footer-logo">RJ <span class="logo-accent">Cars</span></span>
+        <p>&copy; 2025 RJ Cars. All rights reserved. Purveyor of exceptional automobiles for the discerning collector.</p>
+    </footer>
+
+    <script>
+        $(document).ready(function() {
+            // View toggle functionality
+            $('.grid-view').click(function() {
+                $('.vehicles-display').removeClass('list-layout').addClass('grid-layout');
+                $('.view-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+            
+            $('.list-view').click(function() {
+                $('.vehicles-display').removeClass('grid-layout').addClass('list-layout');
+                $('.view-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+            
+            // Sorting functionality
+            $('#sort-select').change(function() {
+                const sortValue = $(this).val();
+                const carCards = $('.car-card').get();
+                
+                carCards.sort(function(a, b) {
+                    switch(sortValue) {
+                        case 'price-asc':
+                            return $(a).find('.price').text().replace(/[^0-9.-]+/g, '') - 
+                                   $(b).find('.price').text().replace(/[^0-9.-]+/g, '');
+                        case 'price-desc':
+                            return $(b).find('.price').text().replace(/[^0-9.-]+/g, '') - 
+                                   $(a).find('.price').text().replace(/[^0-9.-]+/g, '');
+                        case 'year-new':
+                            return $(b).find('h3').text().match(/^\d{4}/)[0] - 
+                                   $(a).find('h3').text().match(/^\d{4}/)[0];
+                        case 'year-old':
+                            return $(a).find('h3').text().match(/^\d{4}/)[0] - 
+                                   $(b).find('h3').text().match(/^\d{4}/)[0];
+                        case 'brand':
+                            const brandA = $(a).find('h3').text().match(/\d{4}\s+(\w+)/)[1];
+                            const brandB = $(b).find('h3').text().match(/\d{4}\s+(\w+)/)[1];
+                            return brandA.localeCompare(brandB);
+                    }
+                });
+                
+                $('.vehicles-display').append(carCards);
+            });
+            
+            // Favorites functionality
+            $('.btn-favorite').click(function() {
+                $(this).find('i').toggleClass('far fas');
+            });
+            
+            // Simple pagination setup
+            let currentPage = 1;
+            const itemsPerPage = 12;
+            const totalItems = $('.car-card').length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            function showPage(page) {
+                $('.car-card').hide();
+                $('.car-card').each(function(n) {
+                    if (n >= (page - 1) * itemsPerPage && n < page * itemsPerPage) {
+                        $(this).show();
+                    }
+                });
+                
+                // Update pagination controls
+                $('.current-page').text(page);
+                $('.prev-page').prop('disabled', page === 1);
+                $('.next-page').prop('disabled', page === totalPages);
+            }
+            
+            // Initialize with first page
+            if (totalItems > itemsPerPage) {
+                showPage(currentPage);
+            }
+            
+            // Pagination controls
+            $('.next-page').click(function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                    $('html, body').animate({ scrollTop: $('.vehicles-display').offset().top - 100 }, 300);
+                }
+            });
+            
+            $('.prev-page').click(function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                    $('html, body').animate({ scrollTop: $('.vehicles-display').offset().top - 100 }, 300);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -397,7 +397,7 @@ def all_vehicles():
     session.pop('search_results', None)
     session.pop('search_params', None)
     
-    # Get all vehicles and set them in the session
+    # Get all vehicles from the database
     try:
         print("Loading all vehicles...")
         results = supabase.table('car_listings').select('*').execute()
@@ -413,13 +413,8 @@ def all_vehicles():
         
         print(f"All vehicles loaded: {len(processed_results)} vehicles found")
         
-        # Store results and search parameters in session
-        session['search_results'] = processed_results
-        session['search_params'] = {
-            'filters_applied': False
-        }
-        
-        return redirect(url_for('search_results'))
+        # Render the all-vehicles template with the results
+        return render_template('all-vehicles.html', results=processed_results)
     except Exception as e:
         flash(f'Error loading vehicles: {str(e)}', 'danger')
         print(f"Error in all_vehicles: {str(e)}")
