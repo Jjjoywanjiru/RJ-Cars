@@ -1,3 +1,4 @@
+# app/mpesa.py
 import os
 import base64
 import requests
@@ -17,6 +18,8 @@ class MpesaClient:
         self.business_shortcode = None
         self.passkey = None
         self.callback_url = None
+        self.consumer_key = None
+        self.consumer_secret = None
         
         if app:
             self.init_app(app)

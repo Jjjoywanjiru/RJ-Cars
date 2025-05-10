@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing M-Pesa Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #status-message {
+            margin: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Processing Your M-Pesa Payment</h1>
+    <p>Please check your phone and enter your M-Pesa PIN when prompted</p>
+    
+    <div class="spinner"></div>
+    <div id="status-message"></div>
+
+    <script>
+        const checkoutRequestId = '{{ checkout_request_id }}';
+        
+        function checkPaymentStatus() {
+            fetch(`/check-payment-status/${checkoutRequestId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.payment_status === 'completed') {
+                            window.location.href = "{{ url_for('payment_success') }}";
+                        } else if (data.payment_status === 'failed') {
+                            document.getElementById('status-message').innerHTML = 
+                                `<p style="color:red">Payment failed: ${data.message || 'Please try again'}</p>
+                                 <a href="{{ url_for('payment') }}" class="button">Try Again</a>`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('status-message').innerHTML = 
+                        '<p style="color:red">Error checking payment status</p>';
+                    console.error('Error:', error);
+                });
+        }
+        
+        // Check every 3 seconds
+        setInterval(checkPaymentStatus, 3000);
+        // Initial check
+        checkPaymentStatus();
+    </script>
+</body>
+</html>

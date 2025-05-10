@@ -1,3 +1,4 @@
+# app/models.py
 import uuid
 from datetime import datetime
 
@@ -9,20 +10,7 @@ class MpesaPayment:
         self.table = 'mpesa_payments'
     
     def create(self, listing_id, phone_number, amount, checkout_request_id, account_reference, transaction_desc):
-        """
-        Create a new M-Pesa payment record
-        
-        Args:
-            listing_id (str): The ID of the car listing
-            phone_number (str): Customer's phone number
-            amount (float): Amount charged
-            checkout_request_id (str): M-Pesa checkout request ID
-            account_reference (str): Account reference
-            transaction_desc (str): Transaction description
-            
-        Returns:
-            dict: The created payment record
-        """
+        """Create a new M-Pesa payment record"""
         payment_data = {
             "id": str(uuid.uuid4()),
             "listing_id": listing_id,
@@ -39,18 +27,7 @@ class MpesaPayment:
         return result.data[0] if result.data else None
     
     def update_status(self, checkout_request_id, status, mpesa_receipt_number=None, transaction_date=None):
-        """
-        Update the status of a payment
-        
-        Args:
-            checkout_request_id (str): M-Pesa checkout request ID
-            status (str): New status (completed, failed)
-            mpesa_receipt_number (str, optional): M-Pesa receipt number
-            transaction_date (str, optional): Date of the transaction
-            
-        Returns:
-            dict: The updated payment record
-        """
+        """Update the status of a payment"""
         update_data = {
             "status": status,
             "updated_at": datetime.now().isoformat()
@@ -70,32 +47,16 @@ class MpesaPayment:
         return result.data[0] if result.data else None
     
     def get_by_checkout_request_id(self, checkout_request_id):
-        """
-        Get payment by checkout request ID
-        
-        Args:
-            checkout_request_id (str): M-Pesa checkout request ID
-            
-        Returns:
-            dict: The payment record
-        """
+        """Get payment by checkout request ID"""
         result = self.supabase.table(self.table)\
             .select("*")\
             .eq("checkout_request_id", checkout_request_id)\
             .execute()
             
-        return result.data[0] if result.data and len(result.data) > 0 else None
+        return result.data[0] if result.data else None
     
     def get_by_listing_id(self, listing_id):
-        """
-        Get payments by listing ID
-        
-        Args:
-            listing_id (str): The ID of the car listing
-            
-        Returns:
-            list: List of payment records
-        """
+        """Get payments by listing ID"""
         result = self.supabase.table(self.table)\
             .select("*")\
             .eq("listing_id", listing_id)\

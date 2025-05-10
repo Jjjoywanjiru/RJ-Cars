@@ -8,6 +8,8 @@ import base64
 from io import BytesIO
 import uuid
 from functools import wraps
+from app.models import MpesaPayment
+from app.mpesa import MpesaClient
 
 # Initialize Flask app
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
@@ -98,6 +100,305 @@ def home():
     if 'user' in session:
         return redirect(url_for('homepage'))
     return redirect(url_for('login'))
+
+
+# Initialize M-Pesa client
+mpesa_client = MpesaClient(app)
+mpesa_payment = MpesaPayment(supabase)
+
+
+
+
+@app.route('/initiate-payment', methods=['POST'])
+@login_required
+def initiate_payment():
+    try:
+        # Get form data
+        listing_id = request.form.get('listing_id')
+        phone_number = request.form.get('phone_number')
+        amount = request.form.get('amount')
+        promotion_type = request.form.get('promotion_type')
+
+        # Validate required fields
+        if not all([listing_id, phone_number, amount, promotion_type]):
+            flash('Missing payment information', 'danger')
+            return redirect(url_for('sellers'))
+
+        # Format phone number (ensure 254 format)
+        if phone_number.startswith('0'):
+            phone_number = '254' + phone_number[1:]
+        elif not phone_number.startswith('254'):
+            phone_number = '254' + phone_number
+
+        # Generate references
+        account_reference = f"RJ{listing_id[:4]}"
+        transaction_desc = f"RJ Cars {promotion_type}"
+
+        # Initiate STK push
+        response = mpesa_client.initiate_stk_push(
+            phone_number=phone_number,
+            amount=amount,
+            account_reference=account_reference,
+            transaction_desc=transaction_desc
+        )
+
+        if 'error' in response:
+            flash(f"M-Pesa Error: {response['error']}", 'danger')
+            return redirect(url_for('payment'))
+
+        if response.get('ResponseCode') == '0':
+            # Save payment record
+            payment = mpesa_payment.create(
+                listing_id=listing_id,
+                phone_number=phone_number,
+                amount=amount,
+                checkout_request_id=response['CheckoutRequestID'],
+                account_reference=account_reference,
+                transaction_desc=transaction_desc
+            )
+
+            # Store in session for status checking
+            session['pending_payment'] = {
+                'checkout_request_id': response['CheckoutRequestID'],
+                'listing_id': listing_id,
+                'promotion_type': promotion_type
+            }
+
+            return render_template('payment_processing.html',
+                                checkout_request_id=response['CheckoutRequestID'])
+        else:
+            error_msg = response.get('ResponseDescription', 'Failed to initiate payment')
+            flash(f'M-Pesa Error: {error_msg}', 'danger')
+            return redirect(url_for('payment'))
+
+    except Exception as e:
+        flash(f'Payment Error: {str(e)}', 'danger')
+        return redirect(url_for('sellers'))
+
+@app.route('/payment-success')
+@login_required
+def payment_success():
+    payment_data = session.pop('pending_payment', None)
+    if not payment_data:
+        flash('Invalid payment session', 'danger')
+        return redirect(url_for('homepage'))
+
+    # Get payment details
+    payment = mpesa_payment.get_by_checkout_request_id(payment_data['checkout_request_id'])
+    
+    return render_template('payment_success.html',
+                         listing_id=payment_data['listing_id'],
+                         receipt_number=payment.get('mpesa_receipt_number'),
+                         amount=payment['amount'])
+
+@app.route('/payment-failed')
+@login_required
+def payment_failed():
+    session.pop('pending_payment', None)
+    flash('Payment was not completed', 'warning')
+    return redirect(url_for('sellers'))
+
+@app.route('/check-payment-status/<checkout_request_id>')
+@login_required
+def check_payment_status(checkout_request_id):
+    try:
+        # Check database first
+        payment = mpesa_payment.get_by_checkout_request_id(checkout_request_id)
+        if not payment:
+            return jsonify({'status': 'error', 'message': 'Payment not found'}), 404
+        
+        if payment['status'] != 'pending':
+            # Update listing if payment completed
+            if payment['status'] == 'completed':
+                supabase.table('car_listings')\
+                    .update({
+                        'promotion': session['pending_payment']['promotion_type'],
+                        'promotion_status': 'active'
+                    })\
+                    .eq('id', payment['listing_id'])\
+                    .execute()
+            
+            return jsonify({
+                'status': 'success',
+                'payment_status': payment['status'],
+                'receipt_number': payment.get('mpesa_receipt_number')
+            })
+        
+        # If still pending, check with M-Pesa
+        response = mpesa_client.check_transaction_status(checkout_request_id)
+        
+        if 'error' in response:
+            return jsonify({'status': 'error', 'message': response['error']}), 400
+        
+        # Parse M-Pesa response
+        if response.get('ResultCode') == '0':
+            # Payment succeeded
+            callback_metadata = response.get('CallbackMetadata', {})
+            items = callback_metadata.get('Item', [])
+            
+            receipt_number = None
+            transaction_date = None
+            
+            for item in items:
+                if item.get('Name') == 'MpesaReceiptNumber':
+                    receipt_number = item.get('Value')
+                elif item.get('Name') == 'TransactionDate':
+                    transaction_date = item.get('Value')
+            
+            # Update payment record
+            mpesa_payment.update_status(
+                checkout_request_id=checkout_request_id,
+                status='completed',
+                mpesa_receipt_number=receipt_number,
+                transaction_date=transaction_date
+            )
+            
+            return jsonify({
+                'status': 'success',
+                'payment_status': 'completed',
+                'receipt_number': receipt_number
+            })
+        else:
+            # Payment failed
+            mpesa_payment.update_status(
+                checkout_request_id=checkout_request_id,
+                status='failed'
+            )
+            return jsonify({
+                'status': 'success',
+                'payment_status': 'failed',
+                'message': response.get('ResultDesc')
+            })
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/initiate-mpesa-payment', methods=['POST'])
+@login_required
+def initiate_mpesa_payment():
+    """Initiate an M-Pesa STK push payment"""
+    try:
+        data = request.get_json()
+        listing_id = data.get('listing_id')
+        phone_number = data.get('phone_number')
+        amount = data.get('amount')
+        promotion_type = data.get('promotion_type')
+        
+        if not all([listing_id, phone_number, amount]):
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+        
+        # Generate unique references
+        account_reference = f"RJ{listing_id[:4]}"
+        transaction_desc = f"RJ Cars {promotion_type}"
+        
+        # Initiate STK push
+        response = mpesa_client.initiate_stk_push(
+            phone_number=phone_number,
+            amount=amount,
+            account_reference=account_reference,
+            transaction_desc=transaction_desc
+        )
+        
+        if 'error' in response:
+            return jsonify({'status': 'error', 'message': response['error']}), 400
+        
+        if response.get('ResponseCode') == '0':
+            # Save payment record
+            payment = mpesa_payment.create(
+                listing_id=listing_id,
+                phone_number=phone_number,
+                amount=amount,
+                checkout_request_id=response['CheckoutRequestID'],
+                account_reference=account_reference,
+                transaction_desc=transaction_desc
+            )
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Payment initiated successfully',
+                'data': {
+                    'merchant_request_id': response['MerchantRequestID'],
+                    'checkout_request_id': response['CheckoutRequestID'],
+                    'payment_id': payment['id']
+                }
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': response.get('ResponseDescription', 'Failed to initiate payment')
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/mpesa-callback', methods=['POST'])
+def mpesa_callback():
+    """Handle M-Pesa payment callback"""
+    try:
+        callback_data = request.get_json()
+        
+        # Log the callback for debugging
+        print("M-Pesa Callback Received:", callback_data)
+        
+        if not callback_data or 'Body' not in callback_data:
+            return jsonify({'status': 'error', 'message': 'Invalid callback data'}), 400
+        
+        stk_callback = callback_data['Body'].get('stkCallback', {})
+        checkout_request_id = stk_callback.get('CheckoutRequestID')
+        result_code = stk_callback.get('ResultCode')
+        
+        if not checkout_request_id:
+            return jsonify({'status': 'error', 'message': 'Missing checkout request ID'}), 400
+        
+        # Get the payment record
+        payment = mpesa_payment.get_by_checkout_request_id(checkout_request_id)
+        if not payment:
+            return jsonify({'status': 'error', 'message': 'Payment record not found'}), 404
+        
+        if result_code == '0':
+            # Payment was successful
+            callback_metadata = stk_callback.get('CallbackMetadata', {})
+            items = callback_metadata.get('Item', [])
+            
+            receipt_number = None
+            transaction_date = None
+            
+            for item in items:
+                if item.get('Name') == 'MpesaReceiptNumber':
+                    receipt_number = item.get('Value')
+                elif item.get('Name') == 'TransactionDate':
+                    transaction_date = item.get('Value')
+            
+            # Update payment status
+            updated_payment = mpesa_payment.update_status(
+                checkout_request_id=checkout_request_id,
+                status='completed',
+                mpesa_receipt_number=receipt_number,
+                transaction_date=transaction_date
+            )
+            
+            # Here you would also update your listing's promotion status
+            # For example:
+            supabase.table('car_listings').update({
+                'promotion': payment['promotion_type'],
+                'promotion_status': 'active'
+            }).eq('id', payment['listing_id']).execute()
+            
+            return jsonify({'status': 'success', 'message': 'Payment processed successfully'})
+        else:
+            # Payment failed
+            result_desc = stk_callback.get('ResultDesc', 'Payment failed')
+            mpesa_payment.update_status(
+                checkout_request_id=checkout_request_id,
+                status='failed'
+            )
+            return jsonify({'status': 'error', 'message': result_desc}), 400
+            
+    except Exception as e:
+        print("Error processing M-Pesa callback:", str(e))
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 
 @app.route('/homepage')
 @login_required
@@ -504,7 +805,30 @@ def get_locations():
         print(f"Error fetching locations: {str(e)}")
         return jsonify({'locations': []})
 
+@app.route('/payment')
+@login_required
+def payment():
+    # Get payment data from session or redirect
+    payment_data = session.get('pending_payment')
+    if not payment_data:
+        flash('No payment information found', 'danger')
+        return redirect(url_for('sellers'))
 
+    # Get listing details
+    listing = supabase.table('car_listings')\
+              .select('*')\
+              .eq('id', payment_data['listing_id'])\
+              .execute()\
+              .data[0]
+
+    if not listing:
+        flash('Listing not found', 'danger')
+        return redirect(url_for('sellers'))
+
+    return render_template('payment.html',
+                         listing=listing,
+                         promotion_type=payment_data['promotion_type'],
+                         amount=1000 if payment_data['promotion_type'] == 'featured' else 10000)
 
 @app.route('/get_models/<brand>')
 @login_required
@@ -534,20 +858,24 @@ def sellers():
                     flash('Only JPG, PNG or GIF images are allowed.', 'danger')
                     return redirect(url_for('sellers'))
                 
-                
                 filename = secure_filename(image_file.filename)
                 unique_filename = f"{uuid.uuid4()}_{filename}"
                 bucket_name = app.config['SUPABASE_STORAGE_BUCKET']
                 
                 try:
+                    # Get file content
                     file_content = image_file.read()
                     
-                    # Upload to Supabase storage
+                    # Get the user's JWT token from the session
+                    user_jwt = supabase.auth.get_session().access_token
+                    
+                    # Upload to Supabase storage using the authorized upload method
                     res = supabase.storage.from_(bucket_name).upload(
-                        path=unique_filename,
                         file=file_content,
+                        path=unique_filename,
                         file_options={
-                            "content-type": image_file.content_type
+                            "content-type": image_file.content_type,
+                            "authorization": f"Bearer {user_jwt}"
                         }
                     )
                     
@@ -563,6 +891,7 @@ def sellers():
             # Get the promotion type from the form
             promotion_type = form.promotion.data
             
+            # Create listing data but don't set promotion status yet
             listing_data = {
                 "seller_name": form.name.data,
                 "seller_email": form.email.data,
@@ -578,21 +907,40 @@ def sellers():
                 "image_url": image_url,
                 "image_path": image_path,
                 "user_id": session.get('user', {}).get('id', None),
-                "promotion": promotion_type  # Add promotion type to database
+                "promotion": promotion_type,
+                "promotion_status": "pending_payment"  # New field to track payment status
             }
             
+            # Save the listing to database
             response = supabase.table('car_listings').insert(listing_data).execute()
             
-            flash('Vehicle listed successfully!', 'success')
+            if not response.data:
+                flash('Error saving listing to database', 'danger')
+                return redirect(url_for('sellers'))
+                
+            listing_id = response.data[0]['id']
             
-            # Redirect based on promotion type
-            if promotion_type == 'featured':
-                flash('Your car has been added to our Featured Cars collection!', 'success')
-                return redirect(url_for('featuredCars'))
-            elif promotion_type == 'homepage':
-                flash('Your car has been added to our Homepage Spotlight!', 'success')
-                return redirect(url_for('homepage'))
+            # Check if this is a paid promotion
+            if promotion_type in ['featured', 'homepage']:
+                # Redirect to payment page with listing details
+                promotion_price = 1000 if promotion_type == 'featured' else 10000
+                promotion_display = "Featured Listing" if promotion_type == 'featured' else "Homepage Spotlight"
+                
+                # Store listing data in session for payment page
+                session['payment_listing'] = {
+                    'id': listing_id,
+                    'brand': form.brand.data,
+                    'model': form.model.data,
+                    'year': form.year.data,
+                    'promotion': promotion_type,
+                    'promotion_price': promotion_price,
+                    'promotion_display': promotion_display
+                }
+                
+                return redirect(url_for('payment'))
             else:
+                # Free listing - no payment needed
+                flash('Vehicle listed successfully!', 'success')
                 return redirect(url_for('sellers'))
             
         except Exception as e:
